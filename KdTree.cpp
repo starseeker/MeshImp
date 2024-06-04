@@ -30,8 +30,8 @@
 #include "Common.h"
 KdTree::KdTree()
 {
-	
-	
+
+
 }
 
 KdTree::~KdTree()
@@ -41,7 +41,7 @@ KdTree::~KdTree()
 
 void KdTree::BuildTree(int numPoints, vert*Verts, int dimension)
 {
-	//Build the tree, copy data and update the root 
+	//Build the tree, copy data and update the root
 	/*if (dimension < 0 || numPoints <= 0){
 		std::cerr << "Error in KdTree::BuildTree:: Invalid parameters" << std::endl;
 		exit(1);
@@ -53,7 +53,7 @@ void KdTree::BuildTree(int numPoints, vert*Verts, int dimension)
 		myPoints[i].myID = i;
 		myPoints[i].x = new double[DIM];
 		for (int j = 0; j < DIM; j++){
-			myPoints[i].x[j] = Verts[i].x[j]; 
+			myPoints[i].x[j] = Verts[i].x[j];
 		}
 	}
 	tmp = new double[DIM];
@@ -63,26 +63,26 @@ void KdTree::BuildTree(int numPoints, vert*Verts, int dimension)
 struct kd_node_t* KdTree::Construct(struct kd_node_t *t, int len, int i)
 {
 	//Constrct the tree and update the root
-	
+
 	struct kd_node_t *n = NULL;
-	if (n = FindMedian(t, t + len, i)){ 
+	if (n = FindMedian(t, t + len, i)){
 		i = (i + 1) % DIM;
 		n->left = Construct(t, n - t, i);
 		n->right = Construct(n + 1, t + len - (n + 1), i);
 	}
 	return n;
-	
+
 }
 
 int KdTree::FindNearest(double*point)
 {
 	testNode.x = point;
-	
+
 	struct kd_node_t *found = 0;
-	
+
 	double best_dist;
-	
-	Nearest(root, &testNode, 0, &found, &best_dist); 
+
+	Nearest(root, &testNode, 0, &found, &best_dist);
 
 	return found->myID;
 
@@ -96,30 +96,30 @@ struct kd_node_t* KdTree::FindMedian(struct kd_node_t*start, struct kd_node_t*en
 	struct  kd_node_t*p, *store, *md(start + (end - start) / 2);
 	double pivot;
 
-	
+
 	while (1){
 		pivot = md->x[id];
 		Swap(md, end - 1);
 
-		
+
 
 		for (store = p = start; p < end; p++){
 			if (p->x[id] < pivot){
 				if (p != store){
 					Swap(p, store);
 				}
-				store++;				
-			}			
+				store++;
+			}
 		}
 
 		Swap(store, end - 1);
-				
+
 		if (store->x[id] == md->x[id]){ return md; }
 
 		if (store > md)end = store;
 		else start = store;
 	}
-	
+
 }
 
 void KdTree::Swap(struct kd_node_t*x, struct kd_node_t*y)
@@ -131,7 +131,7 @@ void KdTree::Swap(struct kd_node_t*x, struct kd_node_t*y)
 }
 
 void KdTree::Nearest(struct kd_node_t *root, struct kd_node_t *nd, int i, struct kd_node_t**best, double *best_dist)
-{	
+{
 	if (!root){ return; }
 	double d = Dist(root, nd);
 	double dx = root->x[i] - nd->x[i];
@@ -147,7 +147,7 @@ void KdTree::Nearest(struct kd_node_t *root, struct kd_node_t *nd, int i, struct
 	Nearest(dx > 0 ? root->left : root->right, nd, i, best, best_dist);
 	if (dx2 >= *best_dist)return;
 	Nearest(dx > 0 ? root->right : root->left, nd, i, best, best_dist);
-	
+
 }
 
 double KdTree::Dist(struct kd_node_t *a, struct kd_node_t *b)

@@ -27,31 +27,31 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "util/OBJ.h"
-#include "operator/execute.h"
+#include "OBJ.h"
+#include "execute.h"
 
 
 struct Switches
 {
-	//Input switches 
-	//simp:   -sim      
-	//nonobt: -nonobt  
-	//samplingBudget: -samples 
-	//numLayer: -ring 
-	//isDelaunay: -del 
+	//Input switches
+	//simp:   -sim
+	//nonobt: -nonobt
+	//samplingBudget: -samples
+	//numLayer: -ring
+	//isDelaunay: -del
 
 	//isSmooth: -smooth
 	//devFactor: -dih
-	
-	//minAngle: -minang 
-	//maxAngle: -maxang 
 
-	//minEdge: -minedge 
-	//maxEdge: -maxedge 
+	//minAngle: -minang
+	//maxAngle: -maxang
+
+	//minEdge: -minedge
+	//maxEdge: -maxedge
 
 	bool simp, nonobt, isSmooth, isDelaunay, verbose;
 	int  samplingBudget, numRing, targetNumSamples;
-	double dih, minAngle, maxAngle, minEdge, maxEdge;	
+	double dih, minAngle, maxAngle, minEdge, maxEdge;
 };
 
 void PrintHelpMessage()
@@ -61,10 +61,10 @@ void PrintHelpMessage()
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 	fprintf(stdout, "Command Line Syntax is: \n\n");
 	fprintf(stdout, "meshimp -APP [-tar -sam -smooth -dih -ring -del -minang -maxang \n");
-	fprintf(stdout, "-minedge - maxedge] INPUT.obj\n");	
+	fprintf(stdout, "-minedge - maxedge] INPUT.obj\n");
 	fprintf(stdout, "\n-APP could be `-sim' for Mesh Simplification or `-obt' for Non-obtuse \n");
 	fprintf(stdout, "Retriangulation.\n");
-	
+
 
 	fprintf(stdout, "\n*************************************************************\n");
 	fprintf(stdout, "Command Line Switches are:\n\n");
@@ -108,13 +108,13 @@ void PrintHelpMessage()
 	fprintf(stdout, "             preserved.\n");
 	fprintf(stdout, "   -v        Display various statistics throughout the execution.\n");
 	fprintf(stdout, "   -h        Display the use message, and quit.\n");
-	
+
 }
 
 bool ParseInteger(int startingIndex, char*searchString, int&IntegerVal)
 {
 	//parse the integer from searchString starting from startingIndex
-	//return false if it is not integer 
+	//return false if it is not integer
 	//return true if it is integer and store the value in IntegerVal
 
 	char numString[2048];
@@ -142,7 +142,7 @@ bool ParseInteger(int startingIndex, char*searchString, int&IntegerVal)
 bool ParseDouble(int startingIndex, char*searchString, double&DoubleVal)
 {
 	//parse the integer from searchString starting from startingIndex
-	//return false if it is not integer 
+	//return false if it is not integer
 	//return true if it is integer and store the value in IntegerVal
 	char numString[2048];
 
@@ -162,7 +162,7 @@ bool ParseDouble(int startingIndex, char*searchString, double&DoubleVal)
 	}
 
 	DoubleVal = strtod(numString, (char**)NULL);
-		
+
 	return true;
 }
 void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filename )
@@ -179,7 +179,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 	mySwitches->verbose = false;
 	mySwitches->targetNumSamples = -1;
 
-	
+
 	//filename = NULL;
 
 	if (argc < 2){
@@ -194,14 +194,14 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 
 			//Help
 			if (argv[i][1] == 'h' && argv[i][2] == '\0'){
-				PrintHelpMessage();		
+				PrintHelpMessage();
 				exit(0);
 			}
-			
+
 			//Simplification
 			else if (argv[i][1] == 's' && argv[i][2] == 'i'&& argv[i][3] == 'm'&& argv[i][4] == '\0'){
 				mySwitches->simp = true;
-			}	
+			}
 
 			//Target number of samples
 			else if (argv[i][1] == 't' && argv[i][2] == 'a'&& argv[i][3] == 'r'){
@@ -222,7 +222,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 				mySwitches->isDelaunay = true;
 			}
 
-			//smoothness 
+			//smoothness
 			else if (argv[i][1] == 's' && argv[i][2] == 'm' && argv[i][3] == 'o'&& argv[i][4] == 'o' &&
 				argv[i][5] == 't'&& argv[i][6] == 'h' && argv[i][7] == '\0'){
 				mySwitches->isSmooth = true;
@@ -233,7 +233,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 				mySwitches->verbose = true;
 			}
 
-			//numRing 
+			//numRing
 			else if (argv[i][1] == 'r' && argv[i][2] == 'i' && argv[i][3] == 'n' && argv[i][4] == 'g'){
 				if (!ParseInteger(5, argv[i], mySwitches->numRing)){
 					fprintf(stderr, "\nERROR:Invalid input. Number of rings should be an integer!!!\n");
@@ -251,7 +251,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 				}
 			}
 
-			//dih angle 
+			//dih angle
 			else if (argv[i][1] == 'd'&&argv[i][2] == 'i'&&argv[i][3] == 'h'){
 				if (!ParseDouble(4, argv[i], mySwitches->dih)){
 					fprintf(stderr, "\nERROR:Invalid input. Dihedral angle should be double!!!\n");
@@ -259,8 +259,8 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 					exit(1);
 				}
 			}
-			
-			//min angle 
+
+			//min angle
 			else if (argv[i][1] == 'm'&&argv[i][2] == 'i'&&argv[i][3] == 'n' &&
 				argv[i][4] == 'a'&&argv[i][5] == 'n'&&argv[i][6] == 'g'){
 
@@ -277,7 +277,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 				}
 			}
 
-			//max angle 
+			//max angle
 			else if (argv[i][1] == 'm'&&argv[i][2] == 'a'&&argv[i][3] == 'x' &&
 				argv[i][4] == 'a'&&argv[i][5] == 'n'&&argv[i][6] == 'g'){
 
@@ -295,7 +295,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 			}
 
 		} else {
-			//this should be the input file			
+			//this should be the input file
 			for (size_t j = 0; j < strlen(argv[i]); j++){
 				if (argv[i][j] == '.'){
 					if (!((argv[i][j + 1] == 'o' || argv[i][j + 1] == 'O') &&
@@ -307,7 +307,7 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 					}
 					break;
 				}
-			}			
+			}
 			filename = new char[5000];
 			filename = argv[i];
 		}
@@ -329,23 +329,23 @@ void ParseInput(int argc, char**argv, struct Switches *mySwitches, char*&filenam
 int main(int argc, char**argv)
 {
 	//1) Parse Input command
-	struct Switches *mySwitches =  new Switches;	
+	struct Switches *mySwitches =  new Switches;
 	char* filename = NULL;
 	ParseInput(argc, argv, mySwitches, filename);
-	
 
-	//2) Read input mesh and build initial data structure 
+
+	//2) Read input mesh and build initial data structure
 	int numVert(0), numTri(0);
-	double**Verts = NULL; 
-	int**Tris = NULL; 	
-	
+	double**Verts = NULL;
+	int**Tris = NULL;
+
 	objReader(filename, numVert, Verts, numTri, Tris);
-		
+
 	//3) Call the right application
 	MeshImp myImp(numVert, Verts, numTri, Tris);
-	
+
 	if (mySwitches->nonobt){
-		
+
 		//For acute >85
 		/*myImp.AcuteRemeshing_InterleaveOpt(mySwitches->samplingBudget,
 										   mySwitches->numRing,
@@ -358,7 +358,7 @@ int main(int argc, char**argv)
 
 		//For removal of tiny small angles <20
 		/*myImp.SmallAngleElimination_InterleaveOpt(mySwitches->minAngle,
-												  mySwitches->samplingBudget, 
+												  mySwitches->samplingBudget,
 												  mySwitches->numRing,
 												  mySwitches->isSmooth,
 												  mySwitches->dih,
@@ -368,18 +368,18 @@ int main(int argc, char**argv)
 
 		//For typical non-obtuse remeshing
 		myImp.NonobtuseRemeshing(mySwitches->samplingBudget,
-			                     mySwitches->numRing, 
-								 mySwitches->isSmooth, 
-								 mySwitches->dih, 
+			                     mySwitches->numRing,
+								 mySwitches->isSmooth,
+								 mySwitches->dih,
 								 mySwitches->isDelaunay,
 								 mySwitches->minAngle,
 								 mySwitches->verbose);
 
 		//For improved non-obtuse remeshing
-		/*myImp.NonobtuseRemeshing_InterleaveOpt(mySwitches->samplingBudget, 
-			                                   mySwitches->numRing, 
-											   mySwitches->isSmooth, 
-											   mySwitches->dih, 
+		/*myImp.NonobtuseRemeshing_InterleaveOpt(mySwitches->samplingBudget,
+			                                   mySwitches->numRing,
+											   mySwitches->isSmooth,
+											   mySwitches->dih,
 											   mySwitches->isDelaunay,
 											   mySwitches->minAngle,
 											   mySwitches->verbose);*/

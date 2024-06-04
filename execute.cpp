@@ -24,12 +24,12 @@
 /************************************************************************************/
 
 #include "execute.h"
-#include "../util/Common.h"
-#include "../util/KdTree.h"
-#include "../util/Statistics.h"
-#include "../operator/Operator.h"
+#include "Common.h"
+#include "KdTree.h"
+#include "Statistics.h"
+#include "Operator.h"
 
-//#include "DrawSpheresDebug.h" //for debugging 
+//#include "DrawSpheresDebug.h" //for debugging
 
 #include <float.h>
 #include <algorithm>
@@ -51,12 +51,12 @@ void MeshImp::ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id
 	//mess_id =0 for error (exit)
 	//otherwise, it is a warning (pause)
 
-	if (mess_id == 0){		
-		fprintf(stderr, "\nError::line(%d)-->>%s", lineNum, message.c_str());				
+	if (mess_id == 0){
+		fprintf(stderr, "\nError::line(%d)-->>%s", lineNum, message.c_str());
 		exit(1);
 	}
 	else{
-		fprintf(stderr, "\nWarning::line(%d)-->>%s\n", lineNum, message.c_str());		
+		fprintf(stderr, "\nWarning::line(%d)-->>%s\n", lineNum, message.c_str());
 		system("pause");
 	}
 }
@@ -64,14 +64,14 @@ void MeshImp::ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id
 //** Containers **//
 MeshImp::MeshImp(int numVert, double **Verts, int numTri, int**Tris) : numVert_org(numVert), numTri_org(numTri)
 {
-			
+
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 	fprintf(stdout, "*************************** Initialize Data Structure ***************************");
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
 
 	//initiate containers
-	MaxNumVert = size_t(3.5*numVert); //TODO only set the 1.5 factor when the injection operators are used 
+	MaxNumVert = size_t(3.5*numVert); //TODO only set the 1.5 factor when the injection operators are used
 	Vert_org = new vert[MaxNumVert];
 	Vert_imp = new vert[MaxNumVert];
 	numVert_imp = numVert_org;
@@ -84,7 +84,7 @@ MeshImp::MeshImp(int numVert, double **Verts, int numTri, int**Tris) : numVert_o
 	for (int i = 0; i < numVert_org; i++){
 		for (int j = 0; j < 3; j++){
 			Vert_imp[i].x[j] = Vert_org[i].x[j] = Verts[i][j];
-		}		
+		}
 		Vert_imp[i].connect[0] = Vert_org[i].connect[0] = 0;
 
 		myBoundingBox.xmax = std::max(myBoundingBox.xmax, Verts[i][0]);
@@ -100,12 +100,12 @@ MeshImp::MeshImp(int numVert, double **Verts, int numTri, int**Tris) : numVert_o
 	myBoundingBox.lz = myBoundingBox.zmax - myBoundingBox.zmin;
 
 
-	//2) store  tessellation  and find neighbour triangles 
+	//2) store  tessellation  and find neighbour triangles
 	Tri_org = new tri[numTri_org];
 	for (int i = 0; i < numTri_org; i++){
 		for (int j = 0; j < 3; j++){
 			Tri_org[i].id[j] = Tris[i][j];
-		}	
+		}
 	}
 	int**vertex_triangles = NULL; //for each vertex i, what are the triangles i is a head on  (this array is populated in FindNeighbourTriangles)
 	FindNeighbourTriangles(vertex_triangles);
@@ -113,29 +113,29 @@ MeshImp::MeshImp(int numVert, double **Verts, int numTri, int**Tris) : numVert_o
 	//3) scale inside a unit box
 	ScaleInputMesh();
 
-	//4) Build KdTree for the input surface 
+	//4) Build KdTree for the input surface
 	surfaceKdTree.BuildTree(numVert, Vert_org, 3);
 
 	//5) get connectivity for Vert_imp/Vert_org (fan triangle)
 	GetFanTriangle();
 
-	//6) check for isolated vertices 
+	//6) check for isolated vertices
 	for (int i = 0; i < numVert_org; i++){
 		if (Vert_org[i].connect[0] == 0){
 			ErrWarnMessage(__LINE__, "MeshImp::MeshImp:: isolated vertex id=" + std::to_string(i), 1);
 		}
 	}
 
-	//7) sort the connectivity 
-	InitialSortAroundVertex(vertex_triangles);		
+	//7) sort the connectivity
+	InitialSortAroundVertex(vertex_triangles);
 	delete[]vertex_triangles;
-	
 
-	//8)Get Statistics 
+
+	//8)Get Statistics
 	DisplayStat(numVert_org, Vert_org, 1);
 	//WriteStatToFile("input_stat.txt", numVert_org, Vert_org, 1);
 
-	//9)Draw input mesh 
+	//9)Draw input mesh
 	//GetMeshOBJ("input.obj", 1, "input_obtuse.obj");
 }
 MeshImp::~MeshImp(){};
@@ -148,7 +148,7 @@ void MeshImp::FindNeighbourTriangles(int**&myTriangles)
 		myTriangles[i][0] = 0;
 	}
 
-	//loop over triangles and populate myTriangles 
+	//loop over triangles and populate myTriangles
 	for (int t = 0; t < numTri_org; t++){
 		int id0(Tri_org[t].id[0]), id1(Tri_org[t].id[1]), id2(Tri_org[t].id[2]);
 		myTriangles[id0][++myTriangles[id0][0]] = t;
@@ -161,9 +161,9 @@ void MeshImp::FindNeighbourTriangles(int**&myTriangles)
 	}
 
 	for (int t = 0; t < numTri_org; t++){
-		//for each triangle t 
+		//for each triangle t
 		//find the other triangle shared between two of its heads
-		//update the t's neighbour list 
+		//update the t's neighbour list
 
 		for (int i = 0; i < 3; i++){
 			int j = (i == 2) ? 0 : i + 1;
@@ -186,12 +186,12 @@ void MeshImp::FindNeighbourTriangles(int**&myTriangles)
 
 	//clean up
 	//for (int i = 0; i < numVert_org; i++){ delete[] myTriangles[i]; }
-	
+
 }
 void MeshImp::InitialSortAroundVertex(int**myTriangles)
 {
 	//Sort the triangle fan around each vertex
-	//only used in the initilization stage since it depends of the input triangulation 
+	//only used in the initilization stage since it depends of the input triangulation
 
 	int common_tri[20];
 	for (int ip = 0; ip < numVert_imp; ip++){
@@ -205,7 +205,7 @@ void MeshImp::InitialSortAroundVertex(int**myTriangles)
 			}
 
 			int tri1(common_tri[1]), tri2(common_tri[2]), ik1, ik2;
-			//ik1 and ik2 are the third vertex in tr1 and tri2 
+			//ik1 and ik2 are the third vertex in tr1 and tri2
 			for (int j = 0; j < 3; j++){
 				if (Tri_org[tri1].id[j] != ip &&Tri_org[tri1].id[j] != iq){ ik1 = Tri_org[tri1].id[j]; }
 			}
@@ -213,18 +213,18 @@ void MeshImp::InitialSortAroundVertex(int**myTriangles)
 				if (Tri_org[tri2].id[j] != ip &&Tri_org[tri2].id[j] != iq){ ik2 = Tri_org[tri2].id[j]; }
 			}
 
-			int ik; //the actual replacement 
+			int ik; //the actual replacement
 			if (i == 1){ ik = ik1; }//anyone of them would fit (this can be further utilized to make the sorting consistent i.e., CCW or CW)
 			else{
-				//check 
-				if (iq_prv != ik1&&iq_prv != ik2){ 
+				//check
+				if (iq_prv != ik1&&iq_prv != ik2){
 					ErrWarnMessage(__LINE__, "MeshImp::InitialSortAroundVertex:: Input mesh has invalid connnectivity #1", 0);
 				}
 				ik = (iq_prv == ik1) ? ik2 : ik1;
 			}
 
-			int  ik_id = GetIndex(ik, Vert_imp[ip].connect); 
-			
+			int  ik_id = GetIndex(ik, Vert_imp[ip].connect);
+
 			if (ik_id < 0){
 				ErrWarnMessage(__LINE__, "MeshImp::InitialSortAroundVertex:: Input mesh has invalid connnectivity #2", 0);
 			}
@@ -291,7 +291,7 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 	fprintf(stdout, "****************************** Simplification Started ***************************");
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
-	
+
 	Statistics myStats;
 	myStats.GetAllStats(numVert_imp, Vert_imp);
 
@@ -300,7 +300,7 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 	SimpOpt.constraints.isSmooth = isSmooth;
 	SimpOpt.constraints.dev = devFactor;
 	SimpOpt.constraints.isDelaunay = isDelaunay;
-	
+
 	SimpOpt.constraints.isMinAngle = true;
 	SimpOpt.constraints.MinAngle = (minAngleAllow<0.0) ? myStats.GetMinAngle() : minAngleAllow;
 
@@ -328,17 +328,17 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 	auto end_time = std::chrono::high_resolution_clock::now();
 
 	if (verbose){
-		fprintf(stdout, "%d vertex removed\n", numVert_before - numVert_imp);	
-	
+		fprintf(stdout, "%d vertex removed\n", numVert_before - numVert_imp);
+
 		myStats.GetAllStats(numVert_imp, Vert_imp);
 		DisplayStat(numVert_imp, Vert_imp,0);
 		fprintf(stdout, "\n itter: %i",itter);
 	}
-	
+
 
 	std::chrono::duration<double> elapsed_time_acc;
 
-		
+
 	while (true){
 		numVert_before = numVert_imp;
 		itter++;
@@ -353,14 +353,14 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 
 		//******* Ejection Two
 		verticesHandler[0] = 2;
-		//for (int ip1 = 0; ip1 < numVert_imp; ip1++){	
+		//for (int ip1 = 0; ip1 < numVert_imp; ip1++){
 		for (int id = 0; id < numVert_imp; id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp){ continue; }
 
 
 			if (Vert_imp[ip1].connect[0] == 0) { continue; }
-						
+
 			bool ejected = false;
 
 			verticesHandler[1] = ip1;
@@ -368,21 +368,21 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 
 				verticesHandler[2] = Vert_imp[ip1].connect[i];
 
-				vertex_void[0] = (Vert_imp[verticesHandler[1]].x[0] + 
+				vertex_void[0] = (Vert_imp[verticesHandler[1]].x[0] +
 					              Vert_imp[verticesHandler[2]].x[0])/ 2.0;
 
-				vertex_void[1] = (Vert_imp[verticesHandler[1]].x[1] + 
+				vertex_void[1] = (Vert_imp[verticesHandler[1]].x[1] +
 					              Vert_imp[verticesHandler[2]].x[1]) / 2.0;
 
-				vertex_void[2] = (Vert_imp[verticesHandler[1]].x[2] + 
+				vertex_void[2] = (Vert_imp[verticesHandler[1]].x[2] +
 					              Vert_imp[verticesHandler[2]].x[2]) / 2.0;
 
 
 				int closestSurfID = surfaceKdTree.FindNearest(vertex_void);
-				if (SimpOpt.constraints.dev > 0){ 
+				if (SimpOpt.constraints.dev > 0){
 					SimpOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - SimpOpt.constraints.dev;
 				}
-								
+
 				if (SimpOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 					ejected = true;
 					break;
@@ -391,7 +391,7 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 
 			if (numVert_imp <= targetNumSamples){ break; }
 		}
-		
+
 		if (numVert_imp > targetNumSamples){
 
 			//******* Ejection Three
@@ -427,7 +427,7 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 					if (SimpOpt.constraints.dev > 0){
 						SimpOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - SimpOpt.constraints.dev;
 					}
-										
+
 					if (SimpOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 						break;
 					}
@@ -438,34 +438,34 @@ void MeshImp::Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer
 				if (numVert_imp <= targetNumSamples){ break; }
 			}
 		}
-		
+
 		auto end_time1 = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_time1 = end_time1 - start_time1;
-				
-		elapsed_time_acc = elapsed_time_acc + elapsed_time1;		
-				
-		
+
+		elapsed_time_acc = elapsed_time_acc + elapsed_time1;
+
+
 		if (verbose){
 			myStats.GetAllStats(numVert_imp, Vert_imp);
 
 			DisplayStat(numVert_imp, Vert_imp,0);
 
 			fprintf(stdout, "\n Reducation Ratio= %f %", 100.0*(double(numVert_org - numVert_imp) / double(numVert_org)));
-			
-			fprintf(stdout, "\n itter: %i", itter);			
-		}			
+
+			fprintf(stdout, "\n itter: %i", itter);
+		}
 
 		if (numVert_imp <= targetNumSamples){ break; }
 		if (numVert_before == numVert_imp){ break; }
-		
+
 	}
-	
+
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 	fprintf(stdout, "***************************** Simplification Finished ***************************");
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
-		
+
 	std::cout << " \nTotal elapsed time: " << elapsed_time_acc.count() << " (s)\n";
-		
+
 	GetMeshOBJ("output.obj", 0, "");
 }
 
@@ -477,30 +477,30 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
 	double devFactor = (theta_d < 0.0) ? -1.0 : 180 - theta_d;
-	isObtuse = false;//no partial improvement 
+	isObtuse = false;//no partial improvement
 	isAcute = false;
 
 	Statistics myStats;
-	myStats.GetAllStats(numVert_imp, Vert_imp); 
+	myStats.GetAllStats(numVert_imp, Vert_imp);
 
-	
-	Operator NonObtuseOpt(Vert_org);	
+
+	Operator NonObtuseOpt(Vert_org);
 
 	NonObtuseOpt.constraints.isSmooth = isSmooth;
-	NonObtuseOpt.constraints.dev = devFactor; 	
+	NonObtuseOpt.constraints.dev = devFactor;
 	NonObtuseOpt.constraints.isDelaunay = isDelaunay;
 
 	NonObtuseOpt.constraints.isMinAngle = true;
 	NonObtuseOpt.constraints.MinAngle = (minAngleAllow<0.0) ? myStats.GetMinAngle() : minAngleAllow;
 	NonObtuseOpt.constraints.isMaxAngle = true;
 	NonObtuseOpt.constraints.MaxAngle = 90.0;
-	
+
 	NonObtuseOpt.constraints.isNonobtuse = true;
 
-	NonObtuseOpt.constraints.isEdgeLen = false;	
+	NonObtuseOpt.constraints.isEdgeLen = false;
 	NonObtuseOpt.constraints.isMaximal = false;
 
-	
+
 	int verticesHandler[4];
 	verticesHandler[0] = 2;
 
@@ -521,20 +521,20 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 	if (verbose){
 		fprintf(stdout, "%d vertex removed\n", numVert_before - numVert_imp);
 	}
-			
+
 	myStats.GetAllStats(numVert_imp, Vert_imp);
-	
+
 	if (verbose){
 		DisplayStat(numVert_imp, Vert_imp, 1);
 		fprintf(stdout, "\n itter: %i", itter);
 	}
-	
-	
+
+
 	std::chrono::duration<double> elapsed_time_acc = end_time-start_time;
 
 	while (myStats.GetNumNonObtuse() > 0){
 		itter++;
-		
+
 		auto start_time1 = std::chrono::high_resolution_clock::now();
 
 		for (int i = 0; i < numVert_imp; i++){
@@ -542,66 +542,66 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 		}
 		random_shuffle(indices.begin(), indices.end());
 
-		//******* Relocation 		
+		//******* Relocation
 		for (size_t id = 0; id < indices.size(); id++){
 			int i = indices[id];
 			if (i >= numVert_imp){ continue; }
 
 			//printf("\nRelocating [%d]", i);
 			//fflush(stdout);
-					
+
 
 			int closestSurfID = surfaceKdTree.FindNearest(Vert_imp[i].x);
 
 			//only do smoothness at smooth areas
-			//i.e., areas that deviates from perfect smooth (180.0 deg) by amount equal to dev factor 
+			//i.e., areas that deviates from perfect smooth (180.0 deg) by amount equal to dev factor
 			//the area is defined by closest surface vertex to i
-			
+
 			if (NonObtuseOpt.constraints.dev > 0){
 				NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 			}
 
-			//if (ObtuseHead(i, ip2, ip3)){			
+			//if (ObtuseHead(i, ip2, ip3)){
 				NonObtuseOpt.Relocation(i, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer);
 			//}
-		
+
 		}
 
-		
+
 		//******* Ejection
-		verticesHandler[0] = 2;		
+		verticesHandler[0] = 2;
 		for (size_t id = 0; id < indices.size(); id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp){ continue; }
-			
+
 
 			if (Vert_imp[ip1].connect[0] == 0) { continue; }
-			if (ObtuseHead(ip1, ip2, ip3)){		
+			if (ObtuseHead(ip1, ip2, ip3)){
 				//we could eject either ip1, ip2 or ip3 (along with another vertex)
 				bool ejected = false;
 
-				verticesHandler[1] = ip1;				
-				for (int i = 1; i <= Vert_imp[ip1].connect[0]; i++){					
-				
-					verticesHandler[2] = Vert_imp[ip1].connect[i];										
+				verticesHandler[1] = ip1;
+				for (int i = 1; i <= Vert_imp[ip1].connect[0]; i++){
+
+					verticesHandler[2] = Vert_imp[ip1].connect[i];
 					vertex_void[0] = (Vert_imp[ip1].x[0] + Vert_imp[Vert_imp[ip1].connect[i]].x[0]) / 2.0;
 					vertex_void[1] = (Vert_imp[ip1].x[1] + Vert_imp[Vert_imp[ip1].connect[i]].x[1]) / 2.0;
 					vertex_void[2] = (Vert_imp[ip1].x[2] + Vert_imp[Vert_imp[ip1].connect[i]].x[2]) / 2.0;
 					int closestSurfID = surfaceKdTree.FindNearest(vertex_void);
 					if (NonObtuseOpt.constraints.dev >0){
 						NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
-					}												
+					}
 
 					if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 						ejected = true;
 						break;
-					}					
+					}
 				}
 
 				if (!ejected){
 					verticesHandler[1] = ip2;
 					for (int i = 1; i <= Vert_imp[ip2].connect[0]; i++){
-					
+
 						verticesHandler[2] = Vert_imp[ip2].connect[i];
 						vertex_void[0] = (Vert_imp[ip2].x[0] + Vert_imp[Vert_imp[ip2].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip2].x[1] + Vert_imp[Vert_imp[ip2].connect[i]].x[1]) / 2.0;
@@ -610,7 +610,7 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 						if (NonObtuseOpt.constraints.dev >0){
 							NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 						}
-												
+
 						if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							ejected = true;
 							break;
@@ -621,7 +621,7 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 				if (!ejected){
 					verticesHandler[1] = ip3;
 					for (int i = 1; i <= Vert_imp[ip3].connect[0]; i++){
-						
+
 						verticesHandler[2] = Vert_imp[ip3].connect[i];
 						vertex_void[0] = (Vert_imp[ip3].x[0] + Vert_imp[Vert_imp[ip3].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip3].x[1] + Vert_imp[Vert_imp[ip3].connect[i]].x[1]) / 2.0;
@@ -630,7 +630,7 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 						if (NonObtuseOpt.constraints.dev >0){
 							NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 						}
-											
+
 
 						if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							ejected = true;
@@ -643,7 +643,7 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 
 
 		//******* Injection
-		verticesHandler[0] = 3;		
+		verticesHandler[0] = 3;
 		for (size_t id = 0; id < indices.size(); id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp){ continue; }
@@ -665,14 +665,14 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 				if (NonObtuseOpt.constraints.dev >0){
 					NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 				}
-						
+
 
 				NonObtuseOpt.Injection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, 1, numSurfaceLayer, 0);
 			}
 		}
 
-		//******* Attractor Ejection		
-		verticesHandler[0] = 2;		
+		//******* Attractor Ejection
+		verticesHandler[0] = 2;
 		for (size_t id = 0; id < indices.size(); id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp){ continue; }
@@ -694,7 +694,7 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 					if (NonObtuseOpt.constraints.dev >0){
 						NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 					}
-					
+
 					if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 1)){
 						ejected = true;
 						break;
@@ -744,8 +744,8 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 			}
 		}
 
-		//******* Repeller Injection 
-		verticesHandler[0] = 3;		
+		//******* Repeller Injection
+		verticesHandler[0] = 3;
 		for (size_t id = 0; id < indices.size(); id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp){ continue; }
@@ -768,23 +768,23 @@ void MeshImp::NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool i
 					NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 				}
 
-				NonObtuseOpt.Injection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, 1, numSurfaceLayer, 1);				
+				NonObtuseOpt.Injection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, 1, numSurfaceLayer, 1);
 
 			}
 		}
 
 		auto end_time1 = std::chrono::high_resolution_clock::now();
-		
+
 		std::chrono::duration<double> elapsed_time1 = end_time1 - start_time1;
-		
+
 		elapsed_time_acc = elapsed_time_acc + elapsed_time1;
-		
-		myStats.GetAllStats(numVert_imp, Vert_imp);		
+
+		myStats.GetAllStats(numVert_imp, Vert_imp);
 
 		if (verbose){
 			DisplayStat(numVert_imp, Vert_imp,1);
 			fprintf(stdout, "\n itter: %i", itter);
-		}			
+		}
 	}
 
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
@@ -806,7 +806,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 	Statistics myStats;
 	myStats.GetAllStats(numVert_imp, Vert_imp);
 
-	//Set the constriants handler 
+	//Set the constriants handler
 	Operator NonObtuseOpt(Vert_org);
 
 	NonObtuseOpt.constraints.isSmooth = isSmooth;
@@ -825,7 +825,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 
 
 	int verticesHandler[4];
-	
+
 
 	int ip2, ip3;
 	int itter = 0;
@@ -851,38 +851,38 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 		DisplayStat(numVert_imp, Vert_imp,1);
 		fprintf(stdout, "\n itter: %i", itter);
 	}
-	
+
 	std::chrono::duration<double> elapsed_time_acc = end_time - start_time;
 
 	while (myStats.GetNumNonObtuse() > 0){
 		itter++;
 
 		auto start_time1 = std::chrono::high_resolution_clock::now();
-		
+
 		for (int i = 0; i < numVert_imp; i++){
 			indices.push_back(i);
 		}
 		random_shuffle(indices.begin(), indices.end());
 
-		// Relocation 		
+		// Relocation
 		for (size_t id = 0; id < indices.size(); id++){
-			
+
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp || Vert_imp[ip1].connect[0] == 0){ continue; }
-			
+
 
 			int closestSurfID = surfaceKdTree.FindNearest(Vert_imp[ip1].x);
-						
+
 			if (NonObtuseOpt.constraints.dev >0){
 				NonObtuseOpt.constraints.isSmooth = Vert_org[closestSurfID].dih_ang > 180.0 - NonObtuseOpt.constraints.dev;
 			}
 
 			isObtuse = ObtuseHead(ip1, ip2, ip3);
-			//Relocation 			
+			//Relocation
 			NonObtuseOpt.Relocation(ip1, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer);
-			
-			
-			//test if it is still an obtuse head 
+
+
+			//test if it is still an obtuse head
 			if (ObtuseHead(ip1, ip2, ip3)){
 				isObtuse = true;
 
@@ -890,7 +890,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 
 				//Ejection
 				verticesHandler[0] = 2;
-				
+
 				if (!fixed){
 					verticesHandler[1] = ip1;
 					for (int i = 1; i <= Vert_imp[ip1].connect[0]; i++){
@@ -898,7 +898,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 						vertex_void[0] = (Vert_imp[ip1].x[0] + Vert_imp[Vert_imp[ip1].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip1].x[1] + Vert_imp[Vert_imp[ip1].connect[i]].x[1]) / 2.0;
 						vertex_void[2] = (Vert_imp[ip1].x[2] + Vert_imp[Vert_imp[ip1].connect[i]].x[2]) / 2.0;
-												
+
 						if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							fixed = true;
 							break;
@@ -913,7 +913,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 						vertex_void[0] = (Vert_imp[ip2].x[0] + Vert_imp[Vert_imp[ip2].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip2].x[1] + Vert_imp[Vert_imp[ip2].connect[i]].x[1]) / 2.0;
 						vertex_void[2] = (Vert_imp[ip2].x[2] + Vert_imp[Vert_imp[ip2].connect[i]].x[2]) / 2.0;
-												
+
 						if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							fixed = true;
 							break;
@@ -928,7 +928,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 						vertex_void[0] = (Vert_imp[ip3].x[0] + Vert_imp[Vert_imp[ip3].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip3].x[1] + Vert_imp[Vert_imp[ip3].connect[i]].x[1]) / 2.0;
 						vertex_void[2] = (Vert_imp[ip3].x[2] + Vert_imp[Vert_imp[ip3].connect[i]].x[2]) / 2.0;
-						
+
 						if (NonObtuseOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							fixed = true;
 							break;
@@ -946,7 +946,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 					vertex_void[0] = (Vert_imp[ip1].x[0] + Vert_imp[ip2].x[0] + Vert_imp[ip3].x[0]) / 3.0;
 					vertex_void[1] = (Vert_imp[ip1].x[1] + Vert_imp[ip2].x[1] + Vert_imp[ip3].x[1]) / 3.0;
 					vertex_void[2] = (Vert_imp[ip1].x[2] + Vert_imp[ip2].x[2] + Vert_imp[ip3].x[2]) / 3.0;
-										
+
 					if (NonObtuseOpt.Injection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, 1, numSurfaceLayer, 0)){
 						fixed = true;
 					}
@@ -954,7 +954,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 
 				//Attracotr Ejection
 				verticesHandler[0] = 2;
-				if (!fixed){					
+				if (!fixed){
 					verticesHandler[1] = ip1;
 					for (int i = 1; i <= Vert_imp[ip1].connect[0]; i++){
 						verticesHandler[2] = Vert_imp[ip1].connect[i];
@@ -999,7 +999,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 					}
 				}
 
-				//Repeller Injection 
+				//Repeller Injection
 				if (!fixed){
 					verticesHandler[0] = 3;
 					verticesHandler[1] = ip1;
@@ -1014,7 +1014,7 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 				}
 			}
 		}
-		
+
 		auto end_time1 = std::chrono::high_resolution_clock::now();
 
 		std::chrono::duration<double> elapsed_time1 = end_time1 - start_time1;
@@ -1033,8 +1033,8 @@ void MeshImp::NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfac
 	fprintf(stdout, "****************** Non-obtuse Remeshing - Interleave Finished *******************");
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
-	std::cout << "\n Total elapsed time: " << elapsed_time_acc.count() << " (s)\n";	
-	
+	std::cout << "\n Total elapsed time: " << elapsed_time_acc.count() << " (s)\n";
+
 	GetMeshOBJ("output.obj", 0, "");
 }
 void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLayer, bool isSmooth, double theta_d, bool isDelaunay, double minAngleAllow, double maxAngleAllow, bool verbose)
@@ -1048,7 +1048,7 @@ void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLay
 	Statistics myStats;
 	myStats.GetAllStats(numVert_imp, Vert_imp);
 
-	//Set the constriants handler 
+	//Set the constriants handler
 	Operator AcuteOpt(Vert_org);
 
 	AcuteOpt.constraints.isSmooth = isSmooth;
@@ -1110,7 +1110,7 @@ void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLay
 		}
 		random_shuffle(indices.begin(), indices.end());
 
-		// Relocation 		
+		// Relocation
 		for (size_t id = 0; id < indices.size(); id++){
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp || Vert_imp[ip1].connect[0] == 0){ continue; }
@@ -1124,10 +1124,10 @@ void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLay
 
 			isAcute = AcuteHead(ip1, ip2, ip3, maxAngleAllow);
 
-			//Relocation 			
+			//Relocation
 			AcuteOpt.Relocation(ip1, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer);
 
-			//test if it is still an obtuse head 
+			//test if it is still an obtuse head
 			if (AcuteHead(ip1, ip2, ip3, maxAngleAllow)){
 				isAcute = false;
 
@@ -1239,7 +1239,7 @@ void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLay
 					}
 				}
 
-				//Repeller Injection 
+				//Repeller Injection
 				if (!fixed){
 					verticesHandler[0] = 3;
 					verticesHandler[1] = ip1;
@@ -1276,7 +1276,7 @@ void MeshImp::AcuteRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLay
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
 	std::cout << "\n Total elapsed time: " << elapsed_time_acc.count() << " (s)\n";
-	
+
 	GetMeshOBJ("output.obj", 0, "");
 }
 
@@ -1292,7 +1292,7 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 	Statistics myStats;
 	myStats.GetAllStats(numVert_imp, Vert_imp);
 
-	//Set the constriants handler 
+	//Set the constriants handler
 	Operator SmallAngOpt (Vert_org);
 
 	SmallAngOpt.constraints.isSmooth = isSmooth;
@@ -1331,7 +1331,7 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 	if (verbose){
 		fprintf(stdout, "%d vertex removed\n", numVert_before - numVert_imp);
 	}
-	
+
 	myStats.GetAllStats(numVert_imp, Vert_imp);
 
 	if (verbose){
@@ -1352,16 +1352,16 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 		}
 		random_shuffle(indices.begin(), indices.end());
 
-		// Relocation 		
+		// Relocation
 		for (size_t id = 0; id < indices.size(); id++){
 
 			int ip1 = indices[id];
 			if (ip1 >= numVert_imp || Vert_imp[ip1].connect[0] == 0){ continue; }
 
 
-			//test if it is still an obtuse head 
+			//test if it is still an obtuse head
 			if (TooSmallHeadAngle(ip1, ip2, ip3, targetMinAngle)){
-				
+
 				int closestSurfID = surfaceKdTree.FindNearest(Vert_imp[ip1].x);
 
 				if (SmallAngOpt.constraints.dev >0){
@@ -1370,9 +1370,9 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 
 				bool fixed = false;
 
-				//Relocation 			
+				//Relocation
 				fixed = SmallAngOpt.Relocation(ip1, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer);
-								
+
 
 				//Ejection
 				verticesHandler[0] = 2;
@@ -1384,7 +1384,7 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 						vertex_void[0] = (Vert_imp[ip1].x[0] + Vert_imp[Vert_imp[ip1].connect[i]].x[0]) / 2.0;
 						vertex_void[1] = (Vert_imp[ip1].x[1] + Vert_imp[Vert_imp[ip1].connect[i]].x[1]) / 2.0;
 						vertex_void[2] = (Vert_imp[ip1].x[2] + Vert_imp[Vert_imp[ip1].connect[i]].x[2]) / 2.0;
-												
+
 
 						if (SmallAngOpt.Ejection(verticesHandler, numVert_imp, Vert_imp, closestSurfID, samplingBudget, numSurfaceLayer, 0)){
 							fixed = true;
@@ -1486,7 +1486,7 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 					}
 				}
 
-				//Repeller Injection 
+				//Repeller Injection
 				if (!fixed){
 					verticesHandler[0] = 3;
 					verticesHandler[1] = ip1;
@@ -1512,13 +1512,13 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 
 		if (verbose){
 			DisplayStat(numVert_imp, Vert_imp,0);
-			fprintf(stdout, "\n itter: %i", itter);			
+			fprintf(stdout, "\n itter: %i", itter);
 		}
 
 		if (myStats.GetMinAngle() > targetMinAngle){ break; }
-	
 
-		SmallAngOpt.constraints.MinAngle = std::max(2.0, 1.5*myStats.GetMinAngle());		
+
+		SmallAngOpt.constraints.MinAngle = std::max(2.0, 1.5*myStats.GetMinAngle());
 	}
 
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
@@ -1526,22 +1526,22 @@ void MeshImp::SmallAngleElimination_InterleaveOpt(double targetMinAngle, int sam
 	fprintf(stdout, "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
 	std::cout << "\n Total elapsed time: " << elapsed_time_acc.count() << " (s)\n";
-		
+
 	GetMeshOBJ("output.obj", 0, "");
 }
 
 //** Evaluate head **//
 bool MeshImp::ObtuseHead(int ip, int&ip1, int&ip2)
 {
-	
+
 	ip2 = Vert_imp[ip].connect[Vert_imp[ip].connect[0]];
 
-	for (int i = 1; i <= Vert_imp[ip].connect[0]; i++){ 
+	for (int i = 1; i <= Vert_imp[ip].connect[0]; i++){
 		ip1 = Vert_imp[ip].connect[i];
 
 		double angle = AngleVectVect(Vert_imp[ip1].x[0] - Vert_imp[ip].x[0], Vert_imp[ip1].x[1] - Vert_imp[ip].x[1], Vert_imp[ip1].x[2] - Vert_imp[ip].x[2],
 			                         Vert_imp[ip2].x[0] - Vert_imp[ip].x[0], Vert_imp[ip2].x[1] - Vert_imp[ip].x[1], Vert_imp[ip2].x[2] - Vert_imp[ip].x[2])*RadToDeg; /* 57.295779513078550 = 180.0 / PI*/
-		
+
 		if (angle > 90.0 + _tol ){
 			return true;
 		}
@@ -1598,9 +1598,7 @@ void MeshImp::WriteStatToFile(std::string filename, int numV, vert*Vert, bool ob
 	Statistics myStats;
 	myStats.GetAllStats(numV, Vert);
 
-	FILE *fp;
-	errno_t err;
-	err = fopen_s(&fp, filename.c_str(), "w");
+	FILE *fp = fopen(filename.c_str(), "w");
 	myStats.DisplayStatistics(fp, obt);
 	fclose(fp);
 
@@ -1614,13 +1612,13 @@ void MeshImp::DisplayStat(int numV, vert*Vert, bool obt)
 }
 void MeshImp::GetMeshOBJ(std::string filename, bool obtuse, std::string filename_obt)
 {
-	//write mesh in .obj file 
+	//write mesh in .obj file
 	fprintf(stdout, "\n Writing output file.\n");
 
-	std::fstream file(filename.c_str(), std::ios::out);	
+	std::fstream file(filename.c_str(), std::ios::out);
 	std::fstream file_obt(filename_obt.c_str(), std::ios::out);
 
-	
+
 
 	file << "#V " <<numVert_imp << std::endl;
 	for (int id0 = 0; id0 < numVert_imp; id0++){
@@ -1673,10 +1671,10 @@ void PointOnSphere(double&x1, double&y1, double&z1, double x_s, double y_s, doub
 }
 void MeshImp::PerturbVertices()
 {
-	//input is vertices one a sphere 
+	//input is vertices one a sphere
 	//move verices that are not head of obtuse angles
 	//in random direction 10% of shorest edge its connected to
-	
+
 	//srand(time(NULL));
 	int n1, n2;
 	RndNum myRandNum;

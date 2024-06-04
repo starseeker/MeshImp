@@ -23,51 +23,60 @@
 /************************************************************************************/
 /************************************************************************************/
 
-//Modified version of https://rosettacode.org/wiki/K-d_tree
-#ifndef _KDTREE_
-#define _KDTREE_
+#ifndef _STAT_
+#define _STAT_
 
-#define MAX_DIM 3
+
+#include <string.h>
+#include <stdio.h>
+#include <string>
+
 #include "Common.h"
 
-struct kd_node_t{
-	double*x;
-	int myID;//the id as in the passed point cloud 
-	struct kd_node_t *left, *right;
-};
+//TODO get diiferent stats at single vertex
+//TODO report valence
 
-class KdTree
+class Statistics
 {
 public:
-	KdTree();
+	Statistics();
+	~Statistics();
 
-	//Call this one time to build everything 
-	void BuildTree(int numPoints, vert*Verts, int dimension);
-	
-	//Call this to get the nearest node
-	int FindNearest(double*point);
+	//First call this to calc all statistics
+	void GetAllStats(int numVert, vert *Vert);
 
-	~KdTree();
-	
+	//Quary functions for the calculated statistics
+	double GetMinAngle(){ return min_angle; }
+	double GetMaxAngle(){ return max_angle; }
+	void GetMinMaxEdgeLen(double&myMinEdgeLen, double&myMaxEdgeLen){ myMinEdgeLen = min_edge_len; myMaxEdgeLen = max_edge_len; }
+	void GetMinMaxTriQuality(double&myMinQuality, double&myMaxQuality){ myMinQuality = min_quality; myMaxQuality = max_quality; }
+	int GetNumTri(){ return num_tri; }
+	int GetNumNonObtuse(){ return num_tri_obtuse; }
+	int CalcNumAcute(int numVert, vert *Vert, double measureAngle);
+	void DisplayStatistics(FILE *fp, bool obt);
+
 private:
-	double Dist(struct kd_node_t*, struct kd_node_t*, int);
-	void Swap(struct kd_node_t*, struct kd_node_t*);
-	struct kd_node_t* FindMedian(struct kd_node_t*, struct kd_node_t*, int);	
-	struct kd_node_t* Construct(struct kd_node_t *t, int len, int i);
-	void Nearest(struct kd_node_t *, struct kd_node_t *, int, struct kd_node_t**, double *);
-	double Dist(struct kd_node_t *, struct kd_node_t *);
+	double min_dih_ang, max_dih_ang,
+		   min_quality, max_quality,
+		   min_angle, max_angle,
+		   min_edge_len, max_edge_len,
+		   average_div_from_60; //average deviation of interior angles from 60 degree
+
+	int num_tri, num_tri_obtuse, num_vertices;
 
 
-	int DIM;
-	
-	struct kd_node_t testNode;
-
-	double*tmp; 
-	struct kd_node_t *myPoints;
-	struct kd_node_t *root;
-	
+	double getCurv(int, int, vert *);
+	void CalcDihAngle(int, vert *);
+	void CalcAnglesEdgeLen(int, vert *);
+	void CalcTriangelQuality(int, vert *);
+	void CalcNumTriangles(int, vert *);
+	void CalcNumNonObtuse(int, vert *);
+	double SingleTriangleQuality(int, int, int, vert *);
+	void ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id);
 };
 
 
 
-#endif
+
+
+#endif /*_STAT_*/

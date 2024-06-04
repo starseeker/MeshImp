@@ -23,10 +23,10 @@
 /************************************************************************************/
 /************************************************************************************/
 
-//The operators are called from the execution 
+//The operators are called from the execution
 //they should be called wiht the right constraints
-//the operators includes all the modification neccessary 
-//i.e., sampling and update data structure  
+//the operators includes all the modification neccessary
+//i.e., sampling and update data structure
 
 
 #ifndef _OPERATOR_
@@ -35,15 +35,15 @@
 
 #include <stdlib.h>
 
-#include "../constraint/Constraints.h"
-#include "../util/Common.h"
-#include "../util/RNG.h"
+#include "Constraints.h"
+#include "Common.h"
+#include "RNG.h"
 
 
 class Operator
 {
 public:
-	//the constraints are set once by the executer  
+	//the constraints are set once by the executer
 	struct AppConstraints{
 		bool isDelaunay;
 		bool isMinAngle; double MinAngle;
@@ -71,20 +71,20 @@ public:
 
 
 private:
-	Constraints myConstraints;  	
+	Constraints myConstraints;
 	RndNum myRandNum;
-	
-	int skipList[20];//the skip list stores the vertices that should be considered as if they are deleted 
-	int skipListNN[20];//the skip list stores the vertices that should be considered as if they are deleted 
-	                 //we use this when we are attracting/repelling vertices 
+
+	int skipList[20];//the skip list stores the vertices that should be considered as if they are deleted
+	int skipListNN[20];//the skip list stores the vertices that should be considered as if they are deleted
+	                 //we use this when we are attracting/repelling vertices
 	double newVertex[3];//coordinates of the new vertex (updated from Sampler)
 	int mynList[100];//sorted neighbour list (connected chain)
 	int mynListNN[100];//sorted neighbour list for being attracted vertex (unconnected chain)
 	double void_vertex[3];
-	int apex[4];//for each two consecutive vertices in *ip, find their (correct) shared vertex 
+	int apex[4];//for each two consecutive vertices in *ip, find their (correct) shared vertex
 	int EdgeToBreak[10];//max 3 edges (3*2 + 1)
-	double original_neighbout[100][3];//keeps a copy of the original void corners to be updated in case of failure in repeller or attractor 
-	int temp_arr[100];//used for various reasons when a temp array is needed 
+	double original_neighbout[100][3];//keeps a copy of the original void corners to be updated in case of failure in repeller or attractor
+	int temp_arr[100];//used for various reasons when a temp array is needed
 
 	void AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSurfaceID, int samplingBudget, int numSurfaceLayer, bool isAttractor);
 	void SetAttractorRepeller(vert*Verts);
@@ -99,13 +99,13 @@ private:
 		         int i_af, int i_rep, int i_bf,
 				 double(*Optimizer)(vert*Verts, int*nList, double*void_ver, double xx, double yy, double zz));
 
-	void RetrieveCoordinates(int lf, int* cell, double&x0, double&y0, double&z0, double&x1, double&y1, double&z1, double&x2, double&y2, double&z2);	
+	void RetrieveCoordinates(int lf, int* cell, double&x0, double&y0, double&z0, double&x1, double&y1, double&z1, double&x2, double&y2, double&z2);
 	bool CheckNewVertex(vert*Verts, int*nList, double x_new, double  y_new, double  z_new, bool att);
 	bool CheckRefinement(vert*Verts, int*nList, double*tri);
 	void RandomPointInTri(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double&x, double&y, double&z);
 	void Mover(int ip, vert*Verts);
 	void EdgeCollapse(int ip_low, int ip_high, int&numVert, vert*Verts);
-	void FaceCollapse(int ip_low, int ip_mid, int ip_high, int&numVert, vert*Verts);	
+	void FaceCollapse(int ip_low, int ip_mid, int ip_high, int&numVert, vert*Verts);
 	void Inserter(int&numVert, vert*Verts);
 	void RemoveVertex(int ip, int&numVert, vert*Verts);
 	bool InspectFeasibleRegion(int*nList, vert*Verts);
@@ -117,12 +117,12 @@ private:
 	void GetFaceSortedNeighbourList(int ip1, int ip2, int ip3, vert*Verts, int*list);
 	void CycleList(int ip, vert*Verts, int iq, int start_id, int end_id, int*list, bool includeLastEle);
 	void CycleList_SkipList(int ip, vert*Verts, int*SkipList, int start_id, int end_id, int*list);
-	
+
 
 	void DrawActivePool(int lf);
 	void DrawnList(vert*Verts);
-	
-	vert*Vert_org;//input surface 
+
+	vert*Vert_org;//input surface
 
 	//resampling grid
 	int num_active;

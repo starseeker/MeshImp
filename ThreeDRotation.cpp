@@ -26,20 +26,20 @@
 #include "ThreeDRotation.h"
 
 #include <iostream>
-#include <cmath> 
+#include <cmath>
 #define _USE_MATH_DEFINES
 #include <math.h>
- 
-using namespace std; 
- 
- 
+
+using namespace std;
+
+
 double rotationMatrix[4][4];
 double inputMatrix[4][1] = {0.0, 0.0, 0.0, 0.0};
-double outputMatrix[4][1] = {0.0, 0.0, 0.0, 0.0}; 
- 
+double outputMatrix[4][1] = {0.0, 0.0, 0.0, 0.0};
+
 void showPoint(){
     cout<<"("<<outputMatrix[0][0]<<","<<outputMatrix[1][0]<<","<<outputMatrix[2][0]<<")"<<endl;
-}  
+}
 void multiplyMatrix()
 {
     for(int i = 0; i < 4; i++ ){
@@ -59,39 +59,39 @@ void setUpRotationMatrix(double angle, double u, double v, double w, double a, d
 	double cs(cos(angle)),sn(sin(angle));
     double u2 = u * u;
     double v2 = v * v;
-    double w2 = w * w; 
- 
+    double w2 = w * w;
+
     rotationMatrix[0][0] = (u2 + (v2 + w2) * cs) / L;
     rotationMatrix[0][1] = (u * v * (1 - cs) - w * L_root * sn) / L;
     rotationMatrix[0][2] = (u * w * (1 - cs) + v * L_root * sn) / L;
     rotationMatrix[0][3] = (((a*(v2+w2)-u*(b*v+c*w))*(1-cs)) + ((b*w-c*v)*L_root*sn))/L;
- 
+
     rotationMatrix[1][0] = (u * v * (1 - cs) + w * L_root * sn) / L;
     rotationMatrix[1][1] = (v2 + (u2 + w2) * cs) / L;
     rotationMatrix[1][2] = (v * w * (1 - cs) - u * L_root * sn) / L;
     rotationMatrix[1][3] = (((b*(u2+w2)-v*(a*u+c*w))*(1-cs)) + ((c*u-a*w)*L_root*sn))/L;
- 
+
     rotationMatrix[2][0] = (u * w * (1 - cs) - v * L_root * sn) / L;
     rotationMatrix[2][1] = (v * w * (1 - cs) + u * L_root * sn) / L;
     rotationMatrix[2][2] = (w2 + (u2 + v2) * cs) / L;
-    rotationMatrix[2][3] = (((c*(u2+v2)-w*(a*u+b*v))*(1-cs)) + ((a*v-b*u)*L_root*sn))/L;; 
- 
+    rotationMatrix[2][3] = (((c*(u2+v2)-w*(a*u+b*v))*(1-cs)) + ((a*v-b*u)*L_root*sn))/L;;
+
     rotationMatrix[3][0] = 0.0;
     rotationMatrix[3][1] = 0.0;
     rotationMatrix[3][2] = 0.0;
     rotationMatrix[3][3] = 1.0;
-}  
+}
 void PerformRotation(double point_x,double point_y,double point_z,//point to rotate
    	                        double u_axis, double v_axis, double w_axis,//axis to rotate about
 					        double a, double b, double c, //point the axis of rotation passes through
 	                        double angle,//angle of rotation
 					        double&rot_point_x,double&rot_point_y,double&rot_point_z)//point after roation
 {
-                
+
     inputMatrix[0][0] = point_x;
     inputMatrix[1][0] = point_y;
     inputMatrix[2][0] = point_z;
-    inputMatrix[3][0] = 1.0;  
+    inputMatrix[3][0] = 1.0;
 
     setUpRotationMatrix(angle, u_axis, v_axis, w_axis,a,b,c);
     multiplyMatrix();
@@ -99,6 +99,6 @@ void PerformRotation(double point_x,double point_y,double point_z,//point to rot
 	rot_point_y=outputMatrix[0][1];
 	rot_point_z=outputMatrix[0][2];
 
-	// showPoint(); 
+	// showPoint();
 
 }

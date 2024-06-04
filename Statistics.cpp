@@ -31,18 +31,18 @@
 #include <string.h>
 #include <algorithm>
 
-//TODO report non-delaunay triangle 
+//TODO report non-delaunay triangle
 Statistics::Statistics()
-{	
+{
 	min_dih_ang = DBL_MAX;
-	max_dih_ang = DBL_MIN; 
+	max_dih_ang = DBL_MIN;
 	min_quality = DBL_MAX;
 	max_quality = DBL_MIN;
 	min_angle = DBL_MAX;
-	max_angle = DBL_MIN; 
+	max_angle = DBL_MIN;
 	min_edge_len = DBL_MAX;
 	max_edge_len = DBL_MIN;
-	num_tri = 0; 
+	num_tri = 0;
 	num_tri_obtuse = 0;
 }
 
@@ -73,22 +73,22 @@ void Statistics::DisplayStatistics(FILE *fp, bool obt)
 
 	fprintf(fp, "\n Minimum edge length = %f", sqrt(min_edge_len));
 	fprintf(fp, "\n Maximum edge length = %f", sqrt(max_edge_len));
-	fprintf(fp, "\n Minimum to Maximum edge length = %f  %%", 100.0*sqrt(min_edge_len / max_edge_len)); 
+	fprintf(fp, "\n Minimum to Maximum edge length = %f  %%", 100.0*sqrt(min_edge_len / max_edge_len));
 	fprintf(fp, "\n");
-	
+
 	fprintf(fp, "\n Minimum triangle quality = %f", min_quality);
 	fprintf(fp, "\n Maximum triangle quality = %f", max_quality);
 	fprintf(fp, "\n");
 
 	fprintf(fp, "\n Minimum dihedral angle = %f", min_dih_ang);
 	fprintf(fp, "\n Maximum dihedral angle = %f", max_dih_ang);
-	fprintf(fp, "\n");	
+	fprintf(fp, "\n");
 }
 
 void Statistics::GetAllStats(int numVert, vert *Vert)
 {
-	
-	CalcDihAngle(numVert, Vert);	
+
+	CalcDihAngle(numVert, Vert);
 	CalcAnglesEdgeLen(numVert, Vert);
 	CalcTriangelQuality(numVert, Vert);
 	CalcNumTriangles(numVert, Vert);
@@ -125,22 +125,22 @@ void Statistics::CalcAnglesEdgeLen(int numVert, vert *Vert)
 	num_vertices = numVert;
 	average_div_from_60 = 0;
 	int num_angles = 0;
-	for (int id0 = 0; id0 < numVert; id0++){ 
+	for (int id0 = 0; id0 < numVert; id0++){
 
 		int id1 = Vert[id0].connect[Vert[id0].connect[0]];
 
 		for (int i = 1; i <= Vert[id0].connect[0]; i++){
 			int id2 = Vert[id0].connect[i];
-						
+
 			double angle = AngleVectVect(Vert[id2].x[0] - Vert[id0].x[0], Vert[id2].x[1] - Vert[id0].x[1], Vert[id2].x[2] - Vert[id0].x[2],
 				                         Vert[id1].x[0] - Vert[id0].x[0], Vert[id1].x[1] - Vert[id0].x[1], Vert[id1].x[2] - Vert[id0].x[2])*RadToDeg;//180.0 / PI;
-			
+
 			double len = Dist(Vert[id0].x[0], Vert[id0].x[1], Vert[id0].x[2], Vert[id1].x[0], Vert[id1].x[1], Vert[id1].x[2]);
 
 			min_angle = std::min(min_angle, angle);
 			max_angle = std::max(max_angle, angle);
-			min_edge_len = std::min(min_edge_len, len); 
-			max_edge_len = std::max(max_edge_len, len); 
+			min_edge_len = std::min(min_edge_len, len);
+			max_edge_len = std::max(max_edge_len, len);
 
 			average_div_from_60 += abs(angle - 60.0);
 			num_angles++;
@@ -164,7 +164,7 @@ void Statistics::CalcNumNonObtuse(int numVert, vert *Vert)
 
 		for (int i = 1; i <= Vert[id0].connect[0]; i++){
 			int id2 = Vert[id0].connect[i];
-						 
+
 			double angle = AngleVectVect(Vert[id2].x[0] - Vert[id0].x[0], Vert[id2].x[1] - Vert[id0].x[1], Vert[id2].x[2] - Vert[id0].x[2],
 				                         Vert[id1].x[0] - Vert[id0].x[0], Vert[id1].x[1] - Vert[id0].x[1], Vert[id1].x[2] - Vert[id0].x[2])*RadToDeg; /* 57.295779513078550 = 180.0 / PI*/
 			if (angle > 90.0 + _tol){ num_tri_obtuse++; }
@@ -177,7 +177,7 @@ void Statistics::CalcNumNonObtuse(int numVert, vert *Vert)
 //** Acute triangles**//
 int Statistics::CalcNumAcute(int numVert, vert *Vert, double measureAngle)
 {
-	int num_acute_angle = 0;	
+	int num_acute_angle = 0;
 	for (int id0 = 0; id0 < numVert; id0++){
 
 		int id1 = Vert[id0].connect[Vert[id0].connect[0]];
@@ -197,24 +197,24 @@ int Statistics::CalcNumAcute(int numVert, vert *Vert, double measureAngle)
 //** Dih angle**//
 double Statistics::getCurv(int ip, int numVert, vert *Vert)
 {
-	//curv is the supplementary angle of the dihderal angle between two triangles 
+	//curv is the supplementary angle of the dihderal angle between two triangles
 	//Here for vertex ip, we return the average curv between each two triangle in ip triangle fan
 
-	double curve(0), angle; 
+	double curve(0), angle;
 
-	int ip3 = Vert[ip].connect[Vert[ip].connect[0]]; 
+	int ip3 = Vert[ip].connect[Vert[ip].connect[0]];
 
 	for (int i = 1; i <= Vert[ip].connect[0]; i++){
 		int ip1 = Vert[ip].connect[i];
-		int ip2 = (i == Vert[ip].connect[0]) ? Vert[ip].connect[1] : Vert[ip].connect[i + 1]; 
-				
+		int ip2 = (i == Vert[ip].connect[0]) ? Vert[ip].connect[1] : Vert[ip].connect[i + 1];
+
 		angle = TriTriNormalAngle(Vert[ip].x, Vert[ip1].x, Vert[ip2].x, Vert[ip3].x);
 
 		//curve = std::max(curve, angle);
 		curve += angle;
 		ip3 = ip1;
 	}
-	return curve / double(Vert[ip].connect[0]); 
+	return curve / double(Vert[ip].connect[0]);
 }
 void Statistics::CalcDihAngle(int numVert, vert *Vert)
 {
@@ -228,14 +228,14 @@ void Statistics::CalcDihAngle(int numVert, vert *Vert)
 	for (int i = 0; i < numVert; i++){
 		Vert[i].dih_ang = 180.0 - getCurv(i, numVert, Vert);
 		min_dih_ang = std::min(min_dih_ang, Vert[i].dih_ang);
-		max_dih_ang = std::max(max_dih_ang, Vert[i].dih_ang);		
+		max_dih_ang = std::max(max_dih_ang, Vert[i].dih_ang);
 	}
 }
 
 //** Triangle quality**//
 double Statistics::SingleTriangleQuality(int ip, int ip1, int ip2, vert *Vert)
 {
-	
+
 	double l1, l2, l3, longest, half_perimeter, area, q;
 	l1 = sqrt(Dist(Vert[ip].x[0], Vert[ip].x[1], Vert[ip].x[2], Vert[ip1].x[0], Vert[ip1].x[1], Vert[ip1].x[2]));
 	l2 = sqrt(Dist(Vert[ip].x[0], Vert[ip].x[1], Vert[ip].x[2], Vert[ip2].x[0], Vert[ip2].x[1], Vert[ip2].x[2]));
@@ -263,7 +263,7 @@ void Statistics::CalcTriangelQuality(int numVert, vert *Vert)
 		int ip2 = Vert[ip].connect[Vert[ip].connect[0]];
 		for (int i = 1; i <= Vert[ip].connect[0]; i++){
 			int ip1 = Vert[ip].connect[i];
-			if (ip < ip1 && ip < ip2){//just do the triangle once 
+			if (ip < ip1 && ip < ip2){//just do the triangle once
 				double qu = SingleTriangleQuality(ip, ip1, ip2, Vert);
 				min_quality = std::min(min_quality, qu);
 				max_quality = std::max(max_quality, qu);
@@ -276,7 +276,7 @@ void Statistics::CalcTriangelQuality(int numVert, vert *Vert)
 
 void Statistics::ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id)
 {
-	
+
 	if (mess_id == 0){
 		std::cerr << "\nError::line(" << lineNum << ")-->>" << message << std::endl;
 		system("pause");

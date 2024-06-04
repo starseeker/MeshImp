@@ -23,60 +23,26 @@
 /************************************************************************************/
 /************************************************************************************/
 
-#ifndef _STAT_
-#define _STAT_
+#ifndef _RNG_
+#define _RNG_
+#include <assert.h>
 
 
-#include <string.h>
-#include <stdio.h>
-#include <string>
-
-#include "Common.h"
-
-//TODO get diiferent stats at single vertex 
-//TODO report valence 
-
-class Statistics
+class RndNum
 {
 public:
-	Statistics();
-	~Statistics();
+	RndNum();
+	~RndNum();
 
-	//First call this to calc all statistics
-	void GetAllStats(int numVert, vert *Vert);
+	void InitiateRndNum(unsigned long x);
+	double RandNumGenerator();
 
-	//Quary functions for the calculated statistics 
-	double GetMinAngle(){ return min_angle; }
-	double GetMaxAngle(){ return max_angle; }
-	void GetMinMaxEdgeLen(double&myMinEdgeLen, double&myMaxEdgeLen){ myMinEdgeLen = min_edge_len; myMaxEdgeLen = max_edge_len; }
-	void GetMinMaxTriQuality(double&myMinQuality, double&myMaxQuality){ myMinQuality = min_quality; myMaxQuality = max_quality; }
-	int GetNumTri(){ return num_tri; }
-	int GetNumNonObtuse(){ return num_tri_obtuse; }
-	int CalcNumAcute(int numVert, vert *Vert, double measureAngle);
-	void DisplayStatistics(FILE *fp, bool obt);
 
 private:
-	double min_dih_ang, max_dih_ang,
-		   min_quality, max_quality,
-		   min_angle, max_angle,
-		   min_edge_len, max_edge_len,
-		   average_div_from_60; //average deviation of interior angles from 60 degree 
-	
-	int num_tri, num_tri_obtuse, num_vertices;
-	
-	
-	double getCurv(int, int, vert *);
-	void CalcDihAngle(int, vert *);
-	void CalcAnglesEdgeLen(int, vert *);
-	void CalcTriangelQuality(int, vert *);
-	void CalcNumTriangles(int, vert *);
-	void CalcNumNonObtuse(int, vert *);
-	double Statistics::SingleTriangleQuality(int, int, int, vert *);	
-	void ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id);
+	int indx;
+	double Q[1220];
 };
 
 
 
-
-
-#endif /*_STAT_*/
+#endif /*_RNG_*/

@@ -26,7 +26,7 @@
 #ifndef _OBJREADER_
 #define _OBJREADER_
 
-#include <stdlib.h>  
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -53,7 +53,7 @@ void objReader(char*filename, int&numVert, double**&Verts, int&numTri, int**&Tri
 	numTri = 0;
 
 	if (myObjFile.is_open()){
-		//pass one 
+		//pass one
 		while (std::getline(myObjFile, lineStr)){
 			if (lineStr[0] == 'V' || lineStr[0] == 'v'){
 				numVert++;
@@ -66,7 +66,7 @@ void objReader(char*filename, int&numVert, double**&Verts, int&numTri, int**&Tri
 		Tris = new int *[numTri];
 		myObjFile.close();
 		myObjFile.open(filename, std::ifstream::in);
-		//pass two 		
+		//pass two
 		int vert_read(0), tri_read(0);
 
 		char myChar[10];
@@ -86,7 +86,7 @@ void objReader(char*filename, int&numVert, double**&Verts, int&numTri, int**&Tri
 				tri_read++;
 			}
 			else {
-				std::getline(myObjFile, lineStr);//read the rest of the line 
+				std::getline(myObjFile, lineStr);//read the rest of the line
 			}
 
 

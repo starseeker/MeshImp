@@ -23,13 +23,13 @@
 /************************************************************************************/
 /************************************************************************************/
 
-//Constraints is supposed to be called from the Operators 
-//it has all the allocation spaces needed and will be accessible by the 
-//the Sampler. Notice that constraints are confined to single patch 
+//Constraints is supposed to be called from the Operators
+//it has all the allocation spaces needed and will be accessible by the
+//the Sampler. Notice that constraints are confined to single patch
 
 #ifndef _CONSTRAINTS_
 #define _CONSTRAINTS_
-#include "../util/Common.h"
+#include "Common.h"
 #include <string>
 
 
@@ -46,7 +46,7 @@ public:
 	void MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_ang, double*void_vertex, bool nonObtuse, bool isConnected);
 	void MinEdgeLength(int*nList, vert*Verts, double (*sizingfunc)(double xx, double yy, double zz));
 	void MinEdgeLength(int*nList, vert*Verts, double r_min_2);
-	void Smoothness(int*nList, int*skipList, vert*Verts, double*void_vertex, double dev);	
+	void Smoothness(int*nList, int*skipList, vert*Verts, double*void_vertex, double dev);
 	void Direction(int*ip, int*nList, vert*Verts);
 	void Maximality();
 	void AttractorInSphere(vert*Verts, int ip, double*void_vertex);
@@ -56,7 +56,7 @@ public:
 	bool InsideFeasibleRegion_Triangle(double*tri);
 	bool OverlappingInSpheres();
 	void SinglePlane(double xn, double yn, double zn, double px, double py, double pz);
-	
+
 
 	//debug
 	void DrawExSpheres();
@@ -70,8 +70,8 @@ private:
 
 	sphere *ExSphere, *InSphere;
 	plane *Plane;
-	BoundBox myBox; //specify the bounding box using the the nList 
-	                //new vertex should be inside the bounding box 
+	BoundBox myBox; //specify the bounding box using the the nList
+	                //new vertex should be inside the bounding box
 	void SetBoundingBox(vert*Verts, int*nList);
 	bool DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool loadSkipList);
 	void ExpandSpheres(int&currentSize, int currentNumSphere, sphere*&mySpheres);
@@ -88,4 +88,4 @@ private:
 
 
 
-#endif 
+#endif

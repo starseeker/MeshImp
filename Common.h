@@ -1,34 +1,33 @@
-/*Copyright(c) 2017, The Regents of the University of California, Davis.			*/
-/*																					*/
-/*																					*/
-/*Redistribution and use in source and binary forms, with or without modification,	*/
-/*are permitted provided that the following conditions are met :			 		*/
-/*																					*/
-/*1. Redistributions of source code must retain the above copyright notice, this	*/
-/*list of conditions and the following disclaimer.									*/
-/*2. Redistributions in binary form must reproduce the above copyright notice,		*/
-/*this list of conditions and the following disclaimer in the documentation			*/
-/*and / or other materials provided with the distribution.							*/
-/*																					*/
-/*THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND	*/
-/*ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED		*/
-/*WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.*/
-/*IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,	*/
-/*INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT	*/
-/*NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR*/
-/*PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,	*/
-/*WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE)	*/
-/*ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 		*/
-/*POSSIBILITY OF SUCH DAMAGE.                                                       */
-/************************************************************************************/
-/************************************************************************************/
+/* Copyright(c) 2017, The Regents of the University of California, Davis.
+ *
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met :
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and / or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 //header file for constants, math and geometric functions
 
 #ifndef _COMMON_
 #define _COMMON_
 
-#define MAX_CONNECT 20 // the max valence for a triangle 
+#define MAX_CONNECT 20 // the max valence for a triangle
 
 #define PI 3.14159265358979323846264338327950288
 #define TwoPI 6.2831853071795862
@@ -53,7 +52,7 @@ struct vert{
 	double dih_ang;
 };
 
-//Structs 
+//Structs
 struct BoundBox{
 	double xmin, xmax, ymin, ymax, zmin, zmax, lx, ly, lz;
 };
@@ -94,14 +93,14 @@ template <typename T>
 bool FindCommonElements(T*arr1, T*arr2, T commonEle[])
 {
 	//store the common elements in arr1 and arr2 in commonEle
-	//return true if it is more than one elements 
+	//return true if it is more than one elements
 
 	commonEle[0] = 0;
-	int num_arr1(arr1[0]), num_arr2(arr2[0]); 
+	int num_arr1(arr1[0]), num_arr2(arr2[0]);
 	for (int i = 1; i <= num_arr1; i++){
-		for (int j = 1; j <= num_arr2; j++){ 
+		for (int j = 1; j <= num_arr2; j++){
 			if (arr1[i] == arr2[j]){
-				commonEle[++commonEle[0]] = arr1[i];				
+				commonEle[++commonEle[0]] = arr1[i];
 			}
 		}
 	}
@@ -114,10 +113,10 @@ template <typename T>
 bool FindCommonElements_SkipList(T*arr1, T*arr2, T*skip_list, T commonEle[])
 {
 	//store the common elements in arr1 and arr2 in commonEle
-	//return true if it is more than one elements 
+	//return true if it is more than one elements
 
 	commonEle[0] = 0;
-	int num_arr1(arr1[0]), num_arr2(arr2[0]), num_skip(skip_list[0]); 
+	int num_arr1(arr1[0]), num_arr2(arr2[0]), num_skip(skip_list[0]);
 
 	for (int i = 1; i <= num_arr1; i++){
 		if (GetIndex(arr1[i], skip_list) >= 0){ continue; }
@@ -135,9 +134,9 @@ bool FindCommonElements_SkipList(T*arr1, T*arr2, T*skip_list, T commonEle[])
 template <typename T>
 T FindCommonElement_SkipList(T*arr1, T*arr2, T*skip_list)
 {
-		
-	//return the single common elements bteween arr1 and arr2 
-	//make no check if there is more than one 
+
+	//return the single common elements bteween arr1 and arr2
+	//make no check if there is more than one
 	int num_arr1(arr1[0]), num_arr2(arr2[0]), num_skip(skip_list[0]);
 
 	for (int i = 1; i <= num_arr1; i++){
@@ -156,8 +155,8 @@ template <typename T>
 T FindCommonElement_SkipList(T*arr1, T*arr2, T skip_element)
 {
 
-	//return the single common elements bteween arr1 and arr2 
-	//make no check if there is more than one 
+	//return the single common elements bteween arr1 and arr2
+	//make no check if there is more than one
 	int num_arr1(arr1[0]), num_arr2(arr2[0]);
 
 	for (int i = 1; i <= num_arr1; i++){
@@ -211,22 +210,22 @@ inline void RemoveNodeFromList(T*list, T entry)
 template <typename T>
 void AddEntrySortedList(T entry, T* list, T prv, T nxt)
 {
-	//add entry to the sorted list 
-	//such that the new entry fits between prv_entry and nxt_entry 
+	//add entry to the sorted list
+	//such that the new entry fits between prv_entry and nxt_entry
 	//length of list is stored in list[0]
 
-	if ((prv == list[list[0]] && nxt == list[1]) || (nxt == list[list[0]] && prv == list[1])){ 
-		//it fits to be in the last or the start of list		
-		list[++list[0]] = entry; 
+	if ((prv == list[list[0]] && nxt == list[1]) || (nxt == list[list[0]] && prv == list[1])){
+		//it fits to be in the last or the start of list
+		list[++list[0]] = entry;
 		return;
 	}
 
-	if (GetIndex(prv, list) > GetIndex(nxt, list)){ 
-		std::swap(prv, nxt); 
+	if (GetIndex(prv, list) > GetIndex(nxt, list)){
+		std::swap(prv, nxt);
 	}
 
 	int i(++list[0]);
-	while (list[i - 1] != prv){ 
+	while (list[i - 1] != prv){
 		list[i] = list[i - 1];
 		--i;
 	}
@@ -246,8 +245,8 @@ inline void Cross(double xv1, double yv1, double zv1, double xv2, double yv2, do
 	zz = xv1*yv2 - yv1*xv2;
 }
 inline double Dot(double xv1, double yv1, double zv1, double xv2, double yv2, double zv2)
-{	
-	return xv1*xv2 + yv1*yv2 + zv1*zv2;	
+{
+	return xv1*xv2 + yv1*yv2 + zv1*zv2;
 }
 inline void PlaneNorm(double ux, double uy, double uz, double vx, double vy, double vz, double&x, double&y, double&z)
 {
@@ -275,7 +274,7 @@ inline double Angle360Vectors(double dxba, double dyba, double dzba, double dxca
 	dot = dxba*dxca + dyba*dyca + dzba*dzca; // dot(ab,ac)
 
 	Cross(dxba, dyba, dzba, dxca, dyca, dzca, i, j, k);
-	
+
 	pcross = i*norm_x + j*norm_y + k*norm_z;
 
 	theta = atan2(pcross, dot);
@@ -287,14 +286,14 @@ inline double Angle360Vectors(double dxba, double dyba, double dzba, double dxca
 
 }
 
-inline double AngleVectVect(double x1, double y1, double z1, double x2, double y2, double z2) 
+inline double AngleVectVect(double x1, double y1, double z1, double x2, double y2, double z2)
 {
 	double dot = x1*x2 + y1*y2 + z1*z2;
 
 	if (dot == 0.0) { return 1.5707963268; }//90 deg
 
 	double angle = dot / sqrt((x1*x1 + y1*y1 + z1*z1) * (x2*x2 + y2*y2 + z2*z2));
-	
+
 	if (angle>1.0){ return 0.0; }
 	if (angle<-1.0){ return PI; }
 
@@ -343,7 +342,7 @@ inline double TriCircumcenter3d(double xa, double ya, double za,
 	/*  If `xi' is NULL on input, the xi-eta coordinates will not be computed.   */
 	/*                                                                           */
 	/*****************************************************************************/
-	//http://www.ics.uci.edu/~eppstein/junkyard/circumcenter.html 
+	//http://www.ics.uci.edu/~eppstein/junkyard/circumcenter.html
 	//http://gamedev.stackexchange.com/questions/60630/how-do-i-find-the-circumcenter-of-a-triangle-in-3d
 	double xba, yba, zba, xca, yca, zca;
 	double balength, calength;
@@ -351,7 +350,7 @@ inline double TriCircumcenter3d(double xa, double ya, double za,
 	double denominator;
 	double xcirca, ycirca, zcirca;
 
-	/* Use coordinates relative to point `a' of the triangle. */ 
+	/* Use coordinates relative to point `a' of the triangle. */
 	xba = xb - xa;
 	yba = yb - ya;
 	zba = zb - za;
@@ -426,7 +425,7 @@ inline double TriCircumcenter3d(double xa, double ya, double za,
 	len1 = dx*dx + dy*dy + dz*dz;
 	if (len1>2.0){ return len1; }
 
-/*#ifdef  debug	
+/*#ifdef  debug
 
 	dx = xb - x_cir;
 	dy = yb - y_cir;
@@ -477,10 +476,10 @@ inline double TriTriNormalAngle(double*ip, double*ip1, double*ip2, double*ip3)
 }
 
 inline double PointTriangleDistance(double xp1, double yp1, double zp1,// triangle head1
-	                                double xp2, double yp2, double zp2,// triangle head2 
+	                                double xp2, double yp2, double zp2,// triangle head2
 	                                double xp3, double yp3, double zp3,// triangle head3
-	                                double xp, double yp, double zp, // my point 
-	                                double&x_new, double&y_new, double&z_new)// my projection 
+	                                double xp, double yp, double zp, // my point
+	                                double&x_new, double&y_new, double&z_new)// my projection
 {
 	// http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
 	// http://www.mathworks.com/matlabcentral/fileexchange/22857-distance-between-a-point-and-a-triangle-in-3d/content/pointTriangleDistance.m
@@ -496,11 +495,11 @@ inline double PointTriangleDistance(double xp1, double yp1, double zp1,// triang
 	//        | \
 	//  reg3  |  \ reg1
 	//        |   \
-	//        |reg0\ 
-	//        |     \ 
+	//        |reg0\
+	//        |     \
 	//        |      \ P1
 	// -------*-------*------->s
-	//        |P0      \ 
+	//        |P0      \
 	//  reg4  | reg5    \ reg6
 
 	/*size_t p1(_surface_tri2[tri][0]),p2(_surface_tri2[tri][1]),p3(_surface_tri2[tri][2]);

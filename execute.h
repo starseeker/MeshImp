@@ -23,7 +23,7 @@
 /************************************************************************************/
 /************************************************************************************/
 
-//This class contains the actual implementation for mesh improvement 
+//This class contains the actual implementation for mesh improvement
 //it starts with by initialize the basic data structures (containers, kd tree, etc)
 //it supports the non-obtuse remeshing and simplification
 
@@ -31,8 +31,8 @@
 #ifndef _EXECUTE_
 #define _EXECUTE_
 
-#include "../util/KdTree.h"
-#include "../util/Common.h"
+#include "KdTree.h"
+#include "Common.h"
 
 
 #include <string>
@@ -45,7 +45,7 @@ public:
 	MeshImp(int numVert, double **Verts, int numTri, int**Tris);
 	~MeshImp();
 
-	
+
 	//** Non-obtuse Remeshing **//
 	void NonobtuseRemeshing(int samplingBudget, int numSurfaceLayer, bool isSmooth, double theta_d, bool isDelaunay, double minAngleAllow, bool verbose);
 	void NonobtuseRemeshing_InterleaveOpt(int samplingBudget, int numSurfaceLayer, bool isSmooth, double theta_d, bool isDelaunay, double minAngleAllow, bool verbose);
@@ -55,23 +55,23 @@ public:
 
 	//** Sifting/Simplification **//
 	void Simp(int targetNumSamples, int samplingBudget, int numSurfaceLayer, bool isSmooth, double theta_d, bool isDelaunay, double minAngleAllow, double maxAngleAllow, bool verbose);
-	
+
 
 	//** Postprocessing **//
 	void WriteStatToFile(std::string, int, vert*, bool obt);
 	void DisplayStat(int, vert*, bool obt);
 	void GetMeshOBJ(std::string filename, bool obtuse, std::string filename_obt);
-	
+
 
 	void PerturbVertices();
 
 private:
-	
-	//Classes 
-	KdTree surfaceKdTree; // the input surface kd tree 
+
+	//Classes
+	KdTree surfaceKdTree; // the input surface kd tree
 	BoundBox myBoundingBox;
-	
-	//Functions 
+
+	//Functions
 	void ErrWarnMessage(size_t, std::string, size_t);
 	void FindNeighbourTriangles(int**&);
 	bool ObtuseHead(int, int&, int&);
@@ -81,16 +81,16 @@ private:
 	void ScaleInputMesh();
 	void GetFanTriangle();
 
-	//Variables 
+	//Variables
 	size_t MaxNumVert;
 	int numVert_org, numTri_org, numVert_imp;
-	vert *Vert_org;//the original surface 	
-	tri *Tri_org;//the original surface triangles 
-	vert *Vert_imp;//the improved/modified surface 
+	vert *Vert_org;//the original surface
+	tri *Tri_org;//the original surface triangles
+	vert *Vert_imp;//the improved/modified surface
 	double scale_factor;
-	std::vector<int>indices; 
-		
-	
+	std::vector<int>indices;
+
+
 
 
 };

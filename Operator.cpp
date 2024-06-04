@@ -33,10 +33,10 @@
 #include <cfloat>
 
 #include "Operator.h"
-#include "../util/Common.h"
-#include "../util/RNG.h"
+#include "Common.h"
+#include "RNG.h"
 
-//#include "DrawSpheresDebug.h" //for debugging 
+//#include "DrawSpheresDebug.h" //for debugging
 
 //#define DEBUGGING
 extern bool isObtuse;
@@ -64,9 +64,9 @@ Operator::Operator(vert*Vert_org):
 	_tar[1] = new double[9];
 	_tar[2] = new double[9];
 	_tar[3] = new double[9];
-	
 
-	srand(time(NULL));	
+
+	srand(time(NULL));
 	myRandNum.InitiateRndNum(rand());
 
 }
@@ -82,9 +82,9 @@ void Operator::TriValentRemoval(int&numVert, vert*Verts)
 	//remove all trivalent regardless to their effect on the quality
 	//do it multiple times
 	//everything can be fixed later
-	//better to call this before applying the operators 
-	//some operators (injection) quit when it finds tri-valents on a patch since it will mess up the toplogical correctness 
-	//other operators can tolerate tri-valents vertices as long as topological correctness holds 
+	//better to call this before applying the operators
+	//some operators (injection) quit when it finds tri-valents on a patch since it will mess up the toplogical correctness
+	//other operators can tolerate tri-valents vertices as long as topological correctness holds
 	while (true){
 		bool again(false);
 		for (int i = numVert; i >= 0; i--){
@@ -103,21 +103,21 @@ void Operator::TriValentRemoval(int&numVert, vert*Verts)
 bool Operator::Relocation(int ip, int&numVert, vert*Verts, int closedtSurfaceID, int samplingBudget, int numSurfaceLayer)
 {
 	//TODO pass the optimizer function also
-	//ip = the vertex to relocate 
+	//ip = the vertex to relocate
 	//numVert =  total num of vertices in mesh
 	//Vert =  the mesh to update
 
 
 
 	myConstraints.Reset(Verts, NULL);
-		
+
 	skipList[0] = 1;
 	skipList[1] = ip;
-	
+
 	if (constraints.isDelaunay){
-		//Delaunay constraints 
+		//Delaunay constraints
 		myConstraints.Delaunay(Verts[ip].connect, skipList, Verts, true,1);
-		if (!myConstraints.OverlappingInSpheres()){ 
+		if (!myConstraints.OverlappingInSpheres()){
 			//empty inclusion region
 			return false;
 		}
@@ -126,21 +126,21 @@ bool Operator::Relocation(int ip, int&numVert, vert*Verts, int closedtSurfaceID,
 	myConstraints.Direction(skipList, Verts[ip].connect, Verts);
 
 	if (constraints.isMinAngle || constraints.isMaxAngle){
-		//Min max angle 
+		//Min max angle
 		myConstraints.MinMaxAngle(Verts[ip].connect, Verts, constraints.MinAngle, constraints.MaxAngle, Verts[ip].x, constraints.isNonobtuse,1);
 	}
 
 	if (constraints.isEdgeLen){
-		//Min edge length 
+		//Min edge length
 		myConstraints.MinEdgeLength(Verts[ip].connect, Verts, constraints.MinEdgeLength_sq);
 	}
 
 	if (constraints.isSmooth){
-		//Smoothness 
+		//Smoothness
 		myConstraints.Smoothness(Verts[ip].connect, skipList, Verts, Verts[ip].x, constraints.dev);
 	}
 
-	
+
 	StartActivePool(closedtSurfaceID, numSurfaceLayer);
 	if (Sampler(Verts, Verts[ip].connect, samplingBudget, -1, -1, -1, &OpimizerFunc_CenterAngle)){
 		Mover(ip, Verts);
@@ -155,24 +155,24 @@ bool Operator::Ejection(int* ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 	//ip = pointer to vertices to eject
 	//numVert =  total num of vertices in mesh
 	//Vert =  the mesh to update
-	
+
 #ifdef DEBUGGING
 	if (ip[0] != 2 && ip[0] != 3){
 		ErrWarnMessage(__LINE__, "Operator::Ejection:: can only ejection two or three vertices", 0);
 	}
 #endif
 
-	//sanity check 
-	//make sure vertices in ip are not connected to the same tri valent node 
-	
-    skipList[0] = 0;//use this list to store the tri valent nodes connected to any of the to-be ejected vertices 
+	//sanity check
+	//make sure vertices in ip are not connected to the same tri valent node
+
+    skipList[0] = 0;//use this list to store the tri valent nodes connected to any of the to-be ejected vertices
 	TriValent(ip[1], Verts, skipList, ip[2], (ip[0] == 3) ? ip[3] : INT_MAX);
 	TriValent(ip[2], Verts, skipList, ip[1], (ip[0] == 3) ? ip[3] : INT_MAX);
 	if (ip[0] == 3){
 		TriValent(ip[3], Verts, skipList, ip[1], ip[2]);
 	}
 	if (FindDuplication(skipList)){ return false; }
-	
+
 	//get mid vertex and copy skipList
 	skipList[0] = ip[0];
 	void_vertex[0] = void_vertex[1] = void_vertex[2] = 0;
@@ -185,7 +185,7 @@ bool Operator::Ejection(int* ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 	void_vertex[0] /= double(ip[0]); void_vertex[1] /= double(ip[0]); void_vertex[2] /= double(ip[0]);
 
 
-	//get the sort neighbout list (unduplicated list of vertices connected to *ip and sorted)	
+	//get the sort neighbout list (unduplicated list of vertices connected to *ip and sorted)
 	mynList[0] = 0;
 	if (ip[0] == 2){
 		if (Verts[ip[1]].connect[0] == 3){
@@ -197,78 +197,78 @@ bool Operator::Ejection(int* ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 		else{
 			GetEdgeSortedNeighbourList(ip[1], ip[2], Verts, mynList);
 			if (mynList[0] < 0 || FindDuplication(mynList)){
-				return false; 
-			}	
+				return false;
+			}
 		}
 	}
 	else{
-		//TODO get the list correct when ejecting three vertices 
-		//take care of special cases of tri-valent nodes 
+		//TODO get the list correct when ejecting three vertices
+		//take care of special cases of tri-valent nodes
 
-		//it is not possible to have two tri-valent node conneced in a watertight manifold 
+		//it is not possible to have two tri-valent node conneced in a watertight manifold
 		if (Verts[ip[1]].connect[0] == 3 || Verts[ip[2]].connect[0] == 3 || Verts[ip[3]].connect[0] == 3){
 			return false;
 		}
 		else {
 			GetFaceSortedNeighbourList(ip[1], ip[2], ip[3], Verts, mynList);
 			if (mynList[0] < 0 || FindDuplication(mynList)){
-				return false; 
+				return false;
 			}
 		}
 	}
-	if (mynList[0] == 0){ 
-		//could not get the neighbours right 
+	if (mynList[0] == 0){
+		//could not get the neighbours right
 		return false;
 	}
 
-	///******* Attractor 
+	///******* Attractor
 	if (att){
 		SetAttractorRepeller(Verts);
 		AttractorRepeller(ip, numVert, Verts, closedtSurfaceID, samplingBudget, numSurfaceLayer, true);
 	}
-	
+
 	myConstraints.Reset(Verts, NULL);
 	myConstraints.Direction(ip, mynList, Verts);
 
 	if (constraints.isDelaunay){
-		//Delaunay constraints 
+		//Delaunay constraints
 		myConstraints.Delaunay(mynList, skipList, Verts, true, 1);
 		if (!myConstraints.OverlappingInSpheres()){
 			//empty inclusion region
 			if (att){
-				RevertAttractorRepeller(Verts);				
+				RevertAttractorRepeller(Verts);
 			}
 			return false;
 		}
 	}
 
 	if (constraints.isMinAngle || constraints.isMaxAngle){
-		//Min max angle 
+		//Min max angle
 		myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse,1);
 	}
 
 	if (constraints.isEdgeLen){
-		//Min edge length 
+		//Min edge length
 		myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 	}
 	if (constraints.isSmooth){
-		//Smoothness 
+		//Smoothness
 		myConstraints.Smoothness(mynList, ip, Verts, void_vertex, constraints.dev);
 	}
-		
+
 	StartActivePool(closedtSurfaceID, numSurfaceLayer);
 	if (Sampler(Verts, mynList, samplingBudget, -1, -1, -1, &OpimizerFunc_CenterAngle)){
 		//for update, call EdgeCollapse if it is two vertices or
-		//FaceCollapse if it is three vertices 
+		//FaceCollapse if it is three vertices
 		if (ip[0] == 2){
 			EdgeCollapse(ip[1],ip[2],numVert,Verts);
 		}
-		else {		
+		else {
 			FaceCollapse(ip[1], ip[2], ip[3], numVert, Verts);
 		}
 		return true;
 	}
-		
+
 	if (att){
 		RevertAttractorRepeller(Verts);
 	}
@@ -277,13 +277,13 @@ bool Operator::Ejection(int* ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 }
 bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, int samplingBudget, int numSurfaceLayer, bool inj)
 {
-	//TODO pass the optimizer function also 
+	//TODO pass the optimizer function also
 	//TODO check that three vertices in ip forms a triangle
 
 	//ip = pointer to vertices to eject (should be three vertices)
 	//numVert =  total num of vertices in mesh
 	//Vert =  the mesh to update
-	
+
 #ifdef DEBUGGING
 	if (ip[0] != 3){
 		ErrWarnMessage(__LINE__, "Operator::Injection:: Invalud input. Correct input is three vertices (triangle)", 0);
@@ -291,10 +291,10 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 #endif
 
 	if (Verts[ip[1]].connect[0] == 3 || Verts[ip[2]].connect[0] == 3 || Verts[ip[3]].connect[0] == 3){
-		//nop, we don't do this 
+		//nop, we don't do this
 		return false;
 	}
-		
+
 
 	skipList[0] = ip[0];
 	void_vertex[0] = void_vertex[1] = void_vertex[2] = 0.0;
@@ -322,15 +322,15 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 			else if (temp_arr[0] == 2){
 
 				if (Verts[temp_arr[1]].connect[0] == 3 || Verts[temp_arr[2]].connect[0] == 3){
-					//get the trivalen one 
+					//get the trivalen one
 					apex[i] = (Verts[temp_arr[1]].connect[0] == 3) ? temp_arr[1] : temp_arr[2];
 				}
 				else{
 
 					//in this case we seek the vertex that is not connected to the other apex
 					//since other apex's are not discovered yet, we skip this one and do it after getting
-					//other apexs. There should not be a way that there is more than one apex that is such problomatic 
-					//but we check on this anyways 
+					//other apexs. There should not be a way that there is more than one apex that is such problomatic
+					//but we check on this anyways
 #ifdef DEBUGGING
 					if (i_skip >= 0){
 						ErrWarnMessage(__LINE__, "Operator::Injection:: not considered. See comment", 0);
@@ -358,8 +358,8 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 	}
 
 	if (i_skip >= 0){
-		//we have on problomatic apex 
-		//at least this apex should not be connected to 
+		//we have on problomatic apex
+		//at least this apex should not be connected to
 		int iq = (i_skip == ip[0]) ? ip[1] : ip[i_skip + 1];
 
 		FindCommonElements_SkipList(Verts[ip[i_skip]].connect, Verts[iq].connect, ip, temp_arr);
@@ -382,16 +382,16 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 
 		apex[i_skip] = (two_shared) ? temp_arr[1] : temp_arr[2];
 	}
-	
+
 	if (Verts[apex[1]].connect[0] == 3 || Verts[apex[2]].connect[0] == 3 || Verts[apex[3]].connect[0] == 3){
-		//nop, we don't do this either 
+		//nop, we don't do this either
 		return false;
 	}
 
-	
 
 
-	//populate the void corner list	
+
+	//populate the void corner list
 	mynList[0] = 6;
 	mynList[1] = ip[1];
 	mynList[2] = apex[1];
@@ -401,47 +401,47 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 	mynList[6] = apex[3];
 
 
-	//*******1) Destory the whole triangle as if we refining it 
+	//*******1) Destory the whole triangle as if we refining it
 	//and removing the edges ip[1]-ip[2], ip[2]-ip[3] and ip[3]-ip[1]
-	//thus creating a void surrounded by six vertices 
-	//only if non of the three vertices in ip are 4-valent 
+	//thus creating a void surrounded by six vertices
+	//only if non of the three vertices in ip are 4-valent
 	//because when we insert a node in the middle in this fashion,
-	//we effectively, reduce the valence of each node in ip by one 
+	//we effectively, reduce the valence of each node in ip by one
 
 	if (Verts[ip[1]].connect[0] > 4 && Verts[ip[2]].connect[0] > 4 && Verts[ip[3]].connect[0] > 4 /*&& InspectFeasibleRegion(mynList, Verts)*/){
 
 		if (inj){
 			SetAttractorRepeller(Verts);
-			AttractorRepeller(ip, numVert, Verts, closedtSurfaceID, samplingBudget, numSurfaceLayer, false); 
+			AttractorRepeller(ip, numVert, Verts, closedtSurfaceID, samplingBudget, numSurfaceLayer, false);
 		}
-			
-		myConstraints.Reset(Verts, NULL); 
-		
+
+		myConstraints.Reset(Verts, NULL);
+
 		myConstraints.Direction(NULL, mynList, Verts);
 
 		if (constraints.isDelaunay){
-			//Delaunay constraints 
+			//Delaunay constraints
 			myConstraints.Delaunay(mynList, skipList, Verts, false, 1);
 		}
 
 		if (myConstraints.OverlappingInSpheres()){
 			if (constraints.isMinAngle || constraints.isMaxAngle){
-				//Min max angle 
+				//Min max angle
 				myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse, 1);
 			}
 
 			if (constraints.isEdgeLen){
-				//Min edge length 
+				//Min edge length
 				myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 			}
 			if (constraints.isSmooth){
-				//Smoothness 
+				//Smoothness
 				myConstraints.Smoothness(mynList, ip, Verts, void_vertex, constraints.dev);
 			}
-		
+
 			StartActivePool(closedtSurfaceID, numSurfaceLayer);
 			if (Sampler(Verts, mynList, samplingBudget, -1, -1, -1, &OpimizerFunc_CenterAngle)){
-				//load the six edges to break 
+				//load the six edges to break
 				//ip[1]-ip[2]
 				//ip[1]-ip[3]
 				//ip[2]-ip[3]
@@ -462,7 +462,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 	}
 
 
-	//*******2) Destory one edge of the triangle and another one 
+	//*******2) Destory one edge of the triangle and another one
 	//there is 9 possibilities in near, we try them all :D
 
 	int ip3 = ip[ip[0]];
@@ -474,17 +474,17 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 		int iapex = apex[i];
 		int japex = apex[j];
 
-		//we take the void_vertex as the avergae of two points 
+		//we take the void_vertex as the avergae of two points
 		//point one is the mid-point between ip1-ip2
 		//point one is the mid-point between ip2-ip3
 		void_vertex[0] = (Verts[ip1].x[0] + 2.0*Verts[ip2].x[0] + Verts[ip3].x[0]) / 4.0;
 		void_vertex[1] = (Verts[ip1].x[1] + 2.0*Verts[ip2].x[1] + Verts[ip3].x[1]) / 4.0;
 		void_vertex[2] = (Verts[ip1].x[2] + 2.0*Verts[ip2].x[2] + Verts[ip3].x[2]) / 4.0;
 
-		
+
 		//#1 first try to destroy the edges ip1-ip2 ip2-ip3
 		if (Verts[ip2].connect[0] > 4){ //this prevents ip2 from being tri-valent
-			//(because we remove two verices connected to it and add one, effectively reduce valence by 1)		
+			//(because we remove two verices connected to it and add one, effectively reduce valence by 1)
 
 			mynList[0] = 5;
 			mynList[1] = ip1;
@@ -492,7 +492,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 			mynList[3] = ip2;
 			mynList[4] = japex;
 			mynList[5] = ip3;
-					
+
 			skipList[0] = 3;
 
 			if (inj){
@@ -504,23 +504,23 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 			myConstraints.Direction(NULL, mynList, Verts);
 
 			if (constraints.isDelaunay){
-				//Delaunay constraints 
+				//Delaunay constraints
 				myConstraints.Delaunay(mynList, skipList, Verts, false, 1);
 			}
 
 			if (myConstraints.OverlappingInSpheres()){
 				if (constraints.isMinAngle || constraints.isMaxAngle){
-					//Min max angle 
+					//Min max angle
 					myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse, 1);
 				}
 
 				if (constraints.isEdgeLen){
-					//Min edge length 
+					//Min edge length
 					myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 				}
 
 				if (constraints.isSmooth){
-					//Smoothness 
+					//Smoothness
 					myConstraints.Smoothness(mynList, skipList, Verts, void_vertex, constraints.dev);
 				}
 
@@ -547,7 +547,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 
 
 
-		//#2 second try to destroy the edges ip1-ip2 with another edge connected to on of the apex 
+		//#2 second try to destroy the edges ip1-ip2 with another edge connected to on of the apex
 
 		for (int id = 1; id <= 2; id++){
 			if (id == 2){
@@ -560,7 +560,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 				//the two edges to destroy are ip1-ip2  and iapex1-ip1
 				int extra_apex = FindCommonElement_SkipList(Verts[ip1].connect, Verts[iapex].connect, ip);
 
-				if (Verts[extra_apex].connect[0] > 3){//if it is 3-valent, then the void is ambigious 
+				if (Verts[extra_apex].connect[0] > 3){//if it is 3-valent, then the void is ambigious
 					//the only solution would be creating 4-valent vertex which is equally bad for most cases
 					mynList[0] = 5;
 					mynList[1] = ip1;
@@ -568,8 +568,8 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 					mynList[3] = iapex;
 					mynList[4] = ip2;
 					mynList[5] = ip3;
-					
-					//here we take the void_vertex as the avergae of two points 
+
+					//here we take the void_vertex as the avergae of two points
 					//point one is the mid-point between ip1-iapex
 					//point one is the mid-point between ip1-ip2
 					void_vertex[0] = (2.0*Verts[ip1].x[0] + Verts[iapex].x[0] + Verts[ip2].x[0]) / 4.0;
@@ -588,23 +588,23 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 					myConstraints.Direction(NULL, mynList, Verts);
 
 					if (constraints.isDelaunay){
-						//Delaunay constraints 
+						//Delaunay constraints
 						myConstraints.Delaunay(mynList, skipList, Verts, false, 1);
 					}
 
 					if (myConstraints.OverlappingInSpheres()){
 						if (constraints.isMinAngle || constraints.isMaxAngle){
-							//Min max angle 
+							//Min max angle
 							myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse, 1);
 						}
 
 						if (constraints.isEdgeLen){
-							//Min edge length 
+							//Min edge length
 							myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 						}
 
 						if (constraints.isSmooth){
-							//Smoothness 
+							//Smoothness
 							myConstraints.Smoothness(mynList, skipList, Verts, void_vertex, constraints.dev);
 						}
 
@@ -628,7 +628,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 			}
 		}
 
-		ip3 = ip2;//not ip1 because we swap it 
+		ip3 = ip2;//not ip1 because we swap it
 
 	}
 
@@ -638,7 +638,7 @@ bool Operator::AggressiveInjection(int*ip, int&numVert, vert*Verts, int closedtS
 }
 bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, int samplingBudget, int numSurfaceLayer, bool inj)
 {
-	//TODO pass the optimizer function also 
+	//TODO pass the optimizer function also
 	//TODO check that three vertices in ip forms a triangle
 
 	//ip = pointer to vertices to eject (should be three vertices)
@@ -652,7 +652,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 #endif
 
 	if (Verts[ip[1]].connect[0] == 3 || Verts[ip[2]].connect[0] == 3 || Verts[ip[3]].connect[0] == 3){
-		//nop, we don't do this 
+		//nop, we don't do this
 		return false;
 	}
 
@@ -683,15 +683,15 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 			else if (temp_arr[0] == 2){
 
 				if (Verts[temp_arr[1]].connect[0] == 3 || Verts[temp_arr[2]].connect[0] == 3){
-					//get the trivalen one 
+					//get the trivalen one
 					apex[i] = (Verts[temp_arr[1]].connect[0] == 3) ? temp_arr[1] : temp_arr[2];
 				}
 				else{
 
 					//in this case we seek the vertex that is not connected to the other apex
 					//since other apex's are not discovered yet, we skip this one and do it after getting
-					//other apexs. There should not be a way that there is more than one apex that is such problomatic 
-					//but we check on this anyways 
+					//other apexs. There should not be a way that there is more than one apex that is such problomatic
+					//but we check on this anyways
 #ifdef DEBUGGING
 					if (i_skip >= 0){
 						ErrWarnMessage(__LINE__, "Operator::Injection:: not considered. See comment", 0);
@@ -714,8 +714,8 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 	}
 
 	if (i_skip >= 0){
-		//we have on problomatic apex 
-		//at least this apex should not be connected to 
+		//we have on problomatic apex
+		//at least this apex should not be connected to
 		int iq = (i_skip == ip[0]) ? ip[1] : ip[i_skip + 1];
 
 		FindCommonElements_SkipList(Verts[ip[i_skip]].connect, Verts[iq].connect, ip, temp_arr);
@@ -740,13 +740,13 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 	}
 
 	if (Verts[apex[1]].connect[0] == 3 || Verts[apex[2]].connect[0] == 3 || Verts[apex[3]].connect[0] == 3){
-		//nop, we don't do this either 
+		//nop, we don't do this either
 		return false;
 	}
 
 
 
-	//*******2) Destory one edge of the triangle and another one 
+	//*******2) Destory one edge of the triangle and another one
 	//there is 9 possibilities in near, we try them all :D
 
 	int ip3 = ip[ip[0]];
@@ -758,7 +758,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 		int iapex = apex[i];
 		int japex = apex[j];
 
-		//we take the void_vertex as the avergae of two points 
+		//we take the void_vertex as the avergae of two points
 		//point one is the mid-point between ip1-ip2
 		//point one is the mid-point between ip2-ip3
 		void_vertex[0] = (Verts[ip1].x[0] + 2.0*Verts[ip2].x[0] + Verts[ip3].x[0]) / 4.0;
@@ -768,7 +768,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 
 		//#1 first try to destroy the edges ip1-ip2 ip2-ip3
 		if ((i == 1 || i == ip[0]) && Verts[ip2].connect[0] > 4){ //this prevents ip2 from being tri-valent
-			//(because we remove two verices connected to it and add one, effectively reduce valence by 1)		
+			//(because we remove two verices connected to it and add one, effectively reduce valence by 1)
 
 			mynList[0] = 5;
 			mynList[1] = ip1;
@@ -788,23 +788,23 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 			myConstraints.Direction(NULL, mynList, Verts);
 
 			if (constraints.isDelaunay){
-				//Delaunay constraints 
+				//Delaunay constraints
 				myConstraints.Delaunay(mynList, skipList, Verts, false, 1);
 			}
 
 			if (myConstraints.OverlappingInSpheres()){
 				if (constraints.isMinAngle || constraints.isMaxAngle){
-					//Min max angle 
+					//Min max angle
 					myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse, 1);
 				}
 
 				if (constraints.isEdgeLen){
-					//Min edge length 
+					//Min edge length
 					myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 				}
 
 				if (constraints.isSmooth){
-					//Smoothness 
+					//Smoothness
 					myConstraints.Smoothness(mynList, skipList, Verts, void_vertex, constraints.dev);
 				}
 
@@ -831,7 +831,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 
 
 
-		//#2 second try to destroy the edges ip1-ip2 with another edge connected to on of the apex 
+		//#2 second try to destroy the edges ip1-ip2 with another edge connected to on of the apex
 
 		for (int id = 1; id <= 2; id++){
 			if (id == 2){
@@ -844,7 +844,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 				//the two edges to destroy are ip1-ip2  and iapex1-ip1
 				int extra_apex = FindCommonElement_SkipList(Verts[ip1].connect, Verts[iapex].connect, ip);
 
-				if (i==2 && Verts[extra_apex].connect[0] > 3){//if it is 3-valent, then the void is ambigious 
+				if (i==2 && Verts[extra_apex].connect[0] > 3){//if it is 3-valent, then the void is ambigious
 					//the only solution would be creating 4-valent vertex which is equally bad for most cases
 					mynList[0] = 5;
 					mynList[1] = ip1;
@@ -853,7 +853,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 					mynList[4] = ip2;
 					mynList[5] = ip3;
 
-					//here we take the void_vertex as the avergae of two points 
+					//here we take the void_vertex as the avergae of two points
 					//point one is the mid-point between ip1-iapex
 					//point one is the mid-point between ip1-ip2
 					void_vertex[0] = (2.0*Verts[ip1].x[0] + Verts[iapex].x[0] + Verts[ip2].x[0]) / 4.0;
@@ -872,23 +872,23 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 					myConstraints.Direction(NULL, mynList, Verts);
 
 					if (constraints.isDelaunay){
-						//Delaunay constraints 
+						//Delaunay constraints
 						myConstraints.Delaunay(mynList, skipList, Verts, false, 1);
 					}
 
 					if (myConstraints.OverlappingInSpheres()){
 						if (constraints.isMinAngle || constraints.isMaxAngle){
-							//Min max angle 
+							//Min max angle
 							myConstraints.MinMaxAngle(mynList, Verts, constraints.MinAngle, constraints.MaxAngle, void_vertex, constraints.isNonobtuse, 1);
 						}
 
 						if (constraints.isEdgeLen){
-							//Min edge length 
+							//Min edge length
 							myConstraints.MinEdgeLength(mynList, Verts, constraints.MinEdgeLength_sq);
 						}
 
 						if (constraints.isSmooth){
-							//Smoothness 
+							//Smoothness
 							myConstraints.Smoothness(mynList, skipList, Verts, void_vertex, constraints.dev);
 						}
 
@@ -913,7 +913,7 @@ bool Operator::Injection(int*ip, int&numVert, vert*Verts, int closedtSurfaceID, 
 		}
 
 
-		ip3 = ip2;//not ip1 because we swap it 
+		ip3 = ip2;//not ip1 because we swap it
 
 	}
 
@@ -932,8 +932,8 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 		//get the neighbour list of iq
 		//this neighbour list is not a conected chain since iq is connected to ip's
 
-		int nxt_id = (i == mynList[0]) ? 1 : i + 1; 		
-		int start_id = GetIndex(mynList[prv_id], Verts[iq].connect);		
+		int nxt_id = (i == mynList[0]) ? 1 : i + 1;
+		int start_id = GetIndex(mynList[prv_id], Verts[iq].connect);
 		int end_id = GetIndex(mynList[nxt_id], Verts[iq].connect);
 
 #ifdef DEBUGGING
@@ -951,7 +951,7 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 			int after_nxt = (nxt_id == mynList[0]) ? mynList[1] : mynList[nxt_id + 1];
 
 			int move_away_vert;
-			if (GetIndex(before_prv, Verts[iq].connect) >= 0){ 
+			if (GetIndex(before_prv, Verts[iq].connect) >= 0){
 				move_away_vert = before_prv;
 			}
 			else if (GetIndex(after_nxt, Verts[iq].connect) >= 0){
@@ -960,14 +960,14 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 			else{
 				move_away_vert = mynList[nxt_id];
 			}
-			
-			CycleList(iq, Verts, move_away_vert, start_id, end_id, mynListNN, 1); 
+
+			CycleList(iq, Verts, move_away_vert, start_id, end_id, mynListNN, 1);
 		}
 		if (mynListNN[0] < 0){
 			prv_id = i;
 			continue;
 		}
-			
+
 
 		//build your geometric primitives to maintain the quality of triangles in mynListNN
 
@@ -982,7 +982,7 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 				prv_id = i;
 				continue;
 			}
-			
+
 			if (!myConstraints.DelaunayForcedNotConnected(mynList, iq, skipList, Verts)){
 				prv_id = i;
 				continue;
@@ -995,16 +995,16 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 		}
 
 		if (constraints.isMinAngle || constraints.isMaxAngle){
-			//Min max angle 
+			//Min max angle
 			myConstraints.MinMaxAngle(mynListNN, Verts, constraints.MinAngle, constraints.MaxAngle, Verts[iq].x, constraints.isNonobtuse, 0);
 		}
-		
+
 		if (constraints.isEdgeLen){
-			//Min edge length 
+			//Min edge length
 			myConstraints.MinEdgeLength(mynListNN, Verts, constraints.MinEdgeLength_sq);
 		}
 
-								
+
 		if (isAttractor){
 			myConstraints.AttractorInSphere(Verts, iq, void_vertex);
 		}
@@ -1013,7 +1013,7 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 			double sum_angle = 0;
 			for (int kkk = 1; kkk < mynListNN[0]; kkk++){
 				int n1 = mynListNN[kkk];
-				int n2 = mynListNN[kkk + 1]; 
+				int n2 = mynListNN[kkk + 1];
 				sum_angle += AngleVectVect(Verts[n1].x[0] - Verts[iq].x[0], Verts[n1].x[1] - Verts[iq].x[1], Verts[n1].x[2] - Verts[iq].x[2],
 					                       Verts[n2].x[0] - Verts[iq].x[0], Verts[n2].x[1] - Verts[iq].x[1], Verts[n2].x[2] - Verts[iq].x[2])*RadToDeg;
 			}
@@ -1051,8 +1051,8 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 			                      Verts[iq].x[2] - void_vertex[2],
 			                      void_vertex[0], void_vertex[1], void_vertex[2]);
 
-		StartActivePool(closedtSurfaceID, numSurfaceLayer);		
-		if (Sampler(Verts, mynListNN, samplingBudget, mynList[nxt_id], iq, mynList[prv_id], (isAttractor) ? &OpimizerFunc_Closer : &OpimizerFunc_Further)){ 
+		StartActivePool(closedtSurfaceID, numSurfaceLayer);
+		if (Sampler(Verts, mynListNN, samplingBudget, mynList[nxt_id], iq, mynList[prv_id], (isAttractor) ? &OpimizerFunc_Closer : &OpimizerFunc_Further)){
 			Mover(iq, Verts);
 		}
 
@@ -1062,7 +1062,7 @@ void Operator::AttractorRepeller(int* ip, int&numVert, vert*Verts, int closedtSu
 }
 void Operator::SetAttractorRepeller(vert*Verts)
 {
-	//copy the vertices we gonna move for attracor or repeller 
+	//copy the vertices we gonna move for attracor or repeller
 	for (int i = 1; i <= mynList[0]; i++){
 		original_neighbout[i][0] = Verts[mynList[i]].x[0];
 		original_neighbout[i][1] = Verts[mynList[i]].x[1];
@@ -1071,8 +1071,8 @@ void Operator::SetAttractorRepeller(vert*Verts)
 }
 void Operator::RevertAttractorRepeller(vert*Verts)
 {
-	//reset the vertices we may have moved for attractor or repeller 
-	//probably because we moved some of them and inejction or ejection failed 
+	//reset the vertices we may have moved for attractor or repeller
+	//probably because we moved some of them and inejction or ejection failed
 	for (int i = 1; i <= mynList[0]; i++){
 		Verts[mynList[i]].x[0] = original_neighbout[i][0];
 		Verts[mynList[i]].x[1] = original_neighbout[i][1];
@@ -1102,26 +1102,26 @@ void Operator::GetListSkipVertex(int ip, vert*Verts, int skip1, int skip2, int*l
 }
 void Operator::GetEdgeSortedNeighbourList(int ip1, int ip2, vert*Verts, int*list)
 {
-	//get the sorted list of neighbour connected to ip1 and ip2 such that 
-	//ip1 and ip2 are not tri-valent and they are not connected to shared tri-valent node 
+	//get the sorted list of neighbour connected to ip1 and ip2 such that
+	//ip1 and ip2 are not tri-valent and they are not connected to shared tri-valent node
 
 	//1) find the common node between ip1 and ip2 (should be two)
 	int common[10];
 	FindCommonElements(Verts[ip1].connect, Verts[ip2].connect, common);
 	if (common[0] != 2){
-		return;		
+		return;
 	}
 
 	int common1_id = GetIndex(common[1], Verts[ip1].connect);
 	int common2_id = GetIndex(common[2], Verts[ip1].connect);
-		
+
 	//2) for ip1 connectivity list, start from common1 and keep advancing till you find common2
-	//   for ip2 connectivity list, start from common2 and keep advancing till you find common1 
+	//   for ip2 connectivity list, start from common2 and keep advancing till you find common1
 	//   since sorting is not consistent, we could be advancing forward or backword in the connectivity list
-	//   such that we are always moving away from the other ip 
+	//   such that we are always moving away from the other ip
 
 	list[0] = 0;
-	
+
 	CycleList(ip1, Verts, ip2, common1_id, common2_id, list, 0);
 	if (list[0] < 0){ return; }
 
@@ -1140,11 +1140,11 @@ void Operator::GetEdgeSortedNeighbourList(int ip1, int ip2, vert*Verts, int*list
 }
 void Operator::GetFaceSortedNeighbourList(int ip1, int ip2, int ip3, vert*Verts, int*list)
 {
-	//get the sorted list of neighbour connected to ip1, ip2 and ip3 such that 
-	//ip1, ip2 and ip3 are not tri-valent and they are not connected to shared tri-valent node 
+	//get the sorted list of neighbour connected to ip1, ip2 and ip3 such that
+	//ip1, ip2 and ip3 are not tri-valent and they are not connected to shared tri-valent node
 
 	//1) find the common node between ip1 and ip2 (should be two)
-	
+
 	int ip1_ip2_sh = FindCommonElement_SkipList(Verts[ip1].connect, Verts[ip2].connect, ip3);
 	int ip2_ip3_sh = FindCommonElement_SkipList(Verts[ip2].connect, Verts[ip3].connect, ip1);
 	int ip3_ip1_sh = FindCommonElement_SkipList(Verts[ip3].connect, Verts[ip1].connect, ip2);
@@ -1153,14 +1153,14 @@ void Operator::GetFaceSortedNeighbourList(int ip1, int ip2, int ip3, vert*Verts,
 		list[0] = -1;
 		return;
 	}
-	
+
 	//2) for ip1 connectivity list, start from ip3_ip1_sh and keep advancing till you find ip1_ip2_sh
-	//   for ip2 connectivity list, start from ip1_ip2_sh and keep advancing till you find ip2_ip3_sh 
-	//   for ip3 connectivity list, start from ip2_ip3_sh and keep advancing till you find ip3_ip1_sh 
+	//   for ip2 connectivity list, start from ip1_ip2_sh and keep advancing till you find ip2_ip3_sh
+	//   for ip3 connectivity list, start from ip2_ip3_sh and keep advancing till you find ip3_ip1_sh
 	//   since sorting is not consistent, we could be advancing forward or backword in the connectivity list
 	//   such that when loop around ip1 we move away from ip3
     //             when loop around ip2 we move away from ip1
-	//             when loop around ip3 we move away from ip2 	               
+	//             when loop around ip3 we move away from ip2
 
 	list[0] = 0;
 
@@ -1196,27 +1196,27 @@ void Operator::CycleList_SkipList(int ip, vert*Verts, int*SkipList, int start_id
 	//list should contain at the end a connected list of verices but only the start and end vertices are not connected
 
 	int prv = (start_id == 1) ? Verts[ip].connect[0] : start_id - 1;
-	
+
 	prv = GetIndex(Verts[ip].connect[prv], SkipList);
-	
-	bool forward = (prv < 0); 
+
+	bool forward = (prv < 0);
 
 	list[++list[0]] = Verts[ip].connect[start_id];
 	int init_size = list[0];
-	//predicate that we gonna move forward 
+	//predicate that we gonna move forward
 	//if we meet any of ip's before reaching end_id, we than reset and go the other direction
 	int my_start_id = start_id;
-	while (true){		
+	while (true){
 		my_start_id = (my_start_id == Verts[ip].connect[0]) ? 1 : my_start_id + 1;
 		list[++list[0]] = Verts[ip].connect[my_start_id];
 		if (GetIndex(Verts[ip].connect[my_start_id], SkipList) >= 0){ break; }
 		if (my_start_id == end_id){ return; }
 	}
-	
-	//if we reach here, then that means that moving forward was wrong 
+
+	//if we reach here, then that means that moving forward was wrong
 	list[0] = init_size;
-	while (true){				
-		start_id = (start_id == 1) ? Verts[ip].connect[0] : start_id - 1;				
+	while (true){
+		start_id = (start_id == 1) ? Verts[ip].connect[0] : start_id - 1;
 		list[++list[0]] = Verts[ip].connect[start_id];
 		if (start_id == end_id){ return; }
 	}
@@ -1225,8 +1225,8 @@ void Operator::CycleList(int ip, vert*Verts, int iq, int start_id, int end_id, i
 {
 	//start_id and end_id are  id's in ip connectivity list
 	//starting from start_id, move in ip connectivity list till we reach end_id
-	//move such that we are moving away from iq 
-	
+	//move such that we are moving away from iq
+
 	int prv = (start_id == 1) ? Verts[ip].connect[0] : start_id - 1;
 	int nxt = (start_id == Verts[ip].connect[0]) ? 1 : start_id + 1;
 
@@ -1256,15 +1256,15 @@ void Operator::CycleList(int ip, vert*Verts, int iq, int start_id, int end_id, i
 }
 bool Operator::InspectFeasibleRegion(int*nList, vert*Verts)
 {
-	//here we inspect if there is feasible region 
+	//here we inspect if there is feasible region
 	//by inspect the void corners only (rather than relying on resampling to figure this out)
-	
-	//For the three operators, we form a void corner and then insert a vertex inside it 
-	//we check if a single vertex could possibly meet all the objectives or not 
-	//for example, if the void corners make an angle less than 2*min_angle 
-	//then any new vertex will split this angle to two angles such that one of them is less min_angle 
+
+	//For the three operators, we form a void corner and then insert a vertex inside it
+	//we check if a single vertex could possibly meet all the objectives or not
+	//for example, if the void corners make an angle less than 2*min_angle
+	//then any new vertex will split this angle to two angles such that one of them is less min_angle
 	return true;
-	
+
 	if (constraints.isMinAngle || constraints.isMaxAngle){
 		int n2 = nList[nList[0]];//previous
 		for (int i = 1; i <= nList[0]; i++){
@@ -1275,7 +1275,7 @@ bool Operator::InspectFeasibleRegion(int*nList, vert*Verts)
 			//	                         Verts[n2].x[0] - Verts[ap].x[0], Verts[n2].x[1] - Verts[ap].x[1], Verts[n2].x[2] - Verts[ap].x[2])*RadToDeg;//180.0 / PI;
 			double v1x = Verts[n1].x[0] - Verts[ap].x[0]; double v1y = Verts[n1].x[1] - Verts[ap].x[1]; double v1z = Verts[n1].x[2] - Verts[ap].x[2];
 			double v2x = Verts[n2].x[0] - Verts[ap].x[0]; double v2y = Verts[n2].x[1] - Verts[ap].x[1]; double v2z = Verts[n2].x[2] - Verts[ap].x[2];
-			 
+
 			Cross(v1x, v1y, v1z,
 				  v2x, v2y, v2z,
 				  xn, yn, zn);
@@ -1294,30 +1294,30 @@ bool Operator::InspectFeasibleRegion(int*nList, vert*Verts)
 		}
 	}
 	return true;
-		
+
 }
 
-///************** Sampling 
-bool Operator::Sampler(vert*Verts, int*nList, int budget, 
+///************** Sampling
+bool Operator::Sampler(vert*Verts, int*nList, int budget,
 	                   int i_af, int i_rep, int i_bf,
 					   double(*Optimizer)(vert*Verts, int*nList, double*void_ver, double xx, double yy, double zz))
 {
-	
-	//the resampling routine, called after constructing the geometric constraints 
+
+	//the resampling routine, called after constructing the geometric constraints
 	//and initlize the active pool
 	//it should spit out a single new vertex in case of success and return true
 	//otherwise return false
 
-	//here we should distingiush between optimizer sampling and regular sampling 
-	//optimizer seek to sample number of samples and pick the best to minimize the 
-	//returned value from Optimizer()	
-	//regular sampling just seek one sample to solve the problem 
+	//here we should distingiush between optimizer sampling and regular sampling
+	//optimizer seek to sample number of samples and pick the best to minimize the
+	//returned value from Optimizer()
+	//regular sampling just seek one sample to solve the problem
 	bool att = i_rep >= 0;
 
-	
-	double currentBest = DBL_MAX;//we gonna minimize this 
-	if (budget > 1 && !att){ 
-		//if optimizer, set the best to the current sample iff it meets all the constraints 
+
+	double currentBest = DBL_MAX;//we gonna minimize this
+	if (budget > 1 && !att){
+		//if optimizer, set the best to the current sample iff it meets all the constraints
 		if (CheckNewVertex(Verts, nList, Verts[skipList[1]].x[0], Verts[skipList[1]].x[1], Verts[skipList[1]].x[2], att)){
 			currentBest = Optimizer(Verts, nList, void_vertex, Verts[skipList[1]].x[0], Verts[skipList[1]].x[1], Verts[skipList[1]].x[2]);
 
@@ -1332,8 +1332,8 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 	for (int lf = 0; lf < 15; lf++){
 		int attempt = int(0.8*num_active);
 
-		//a) dart throwing 
-		
+		//a) dart throwing
+
 		for (int i = 0; i < attempt; i++){
 			int tri = int(myRandNum.RandNumGenerator()*double(num_active - 1));
 			double x1, y1, z1, x2, y2, z2, x3, y3, z3;
@@ -1341,7 +1341,7 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 			double x_new, y_new, z_new;
 			RandomPointInTri(x1, y1, z1, x2, y2, z2, x3, y3, z3, x_new, y_new, z_new);
 
-			
+
 			if (CheckNewVertex(Verts, nList, x_new, y_new, z_new, att)){
 				num_succ_candidate++;
 				if (budget == 1){
@@ -1351,7 +1351,7 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 					return true;
 				}
 				else{
-					//apply optimizer 
+					//apply optimizer
 					double myVal = Optimizer(Verts, nList, void_vertex, x_new, y_new, z_new);
 					if (abs(currentBest - DBL_MAX) < _tol){
 						//if this is the first candidate (then take it)
@@ -1361,7 +1361,7 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 						newVertex[2] = z_new;
 					}
 					else{
-						
+
 						if (myVal < currentBest){
 							currentBest = myVal;
 							newVertex[0] = x_new;
@@ -1369,14 +1369,14 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 							newVertex[2] = z_new;
 						}
 					}
-					if (num_succ_candidate >= budget){ 
+					if (num_succ_candidate >= budget){
 						return true;
 					}
 				}
 			}
 		}
 
-		//b) refinement 
+		//b) refinement
 		int tmp_num_active = 0;
 		for (int iactive = 0; iactive < num_active; iactive++){
 			double x1, y1, z1, x2, y2, z2, x3, y3, z3;
@@ -1400,7 +1400,7 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 			_tar[C][6] = (x2 + x3) / 2.0; _tar[C][7] = (y2 + y3) / 2.0; _tar[C][8] = (z2 + z3) / 2.0;
 
 			for (C = 0; C < 4; C++){
-			
+
 
 				if (CheckRefinement(Verts, nList, _tar[C])){
 
@@ -1428,9 +1428,9 @@ bool Operator::Sampler(vert*Verts, int*nList, int budget,
 		}
 
 		//swap
-		if (tmp_num_active == 0){ 
+		if (tmp_num_active == 0){
 			if (num_succ_candidate > 0){ return true; }
-			return false; 
+			return false;
 		}
 		else{
 			num_active = tmp_num_active;
@@ -1450,11 +1450,11 @@ void Operator::StartActivePool(int id, int maxDepth)
 	//TODO pass me the kd-tree of the original surface and let me pick the closest the surface myself
 
 	//Start the active pool by the fan triangle of id
-	//then propagate to include maxDepth of surrounding triangles of above fan triangle 
+	//then propagate to include maxDepth of surrounding triangles of above fan triangle
 
 	//for relocation, it is better to let maxDepth to be 1
-	//for ejection, it is better to get larger patch tho 2 would be enough 
-	
+	//for ejection, it is better to get larger patch tho 2 would be enough
+
 	num_active = 0;
 	next_layer[0] = 1;
 	next_layer[1] = id;
@@ -1475,23 +1475,23 @@ void Operator::StartActivePool(int id, int maxDepth)
 				}
 			}
 		}
-		start = end + 1; 
+		start = end + 1;
 	}
-	
-	
 
-	for (int i = 1; i <= next_layer[0]; i++){		
+
+
+	for (int i = 1; i <= next_layer[0]; i++){
 		GetFanTriangles(next_layer[i]);
 	}
-		
+
 }
 void Operator::StartActivePool(int closedtSurfaceID, double*myVert)
 {
-	//initialize actove pool but triangle fans of some surface vertices 
+	//initialize actove pool but triangle fans of some surface vertices
 	//find the surface trianle such that the projection of myVert is min
-	//get the fan triangle of the three vertices of this triangle 
+	//get the fan triangle of the three vertices of this triangle
 
-	//myVert is the coordinates of the center to be projected 
+	//myVert is the coordinates of the center to be projected
 	//for relocation, it is the vertex to be reolcated
 	//for ejection/injection, it the mid point of the two points to be ejected, or center of triangle to be ejected
 	num_active = 0;
@@ -1516,8 +1516,8 @@ void Operator::StartActivePool(int closedtSurfaceID, double*myVert)
 	}
 
 
-	//get the fan triangles of closedtSurfaceID, closedtSurfaceID1 and closedtSurfaceID2 
-	//carful of duplication 
+	//get the fan triangles of closedtSurfaceID, closedtSurfaceID1 and closedtSurfaceID2
+	//carful of duplication
 	GetFanTriangles(closedtSurfaceID);
 	GetFanTriangles(closedtSurfaceID1);
 	GetFanTriangles(closedtSurfaceID2);
@@ -1525,16 +1525,16 @@ void Operator::StartActivePool(int closedtSurfaceID, double*myVert)
 }
 void Operator::GetFanTriangles(int id)
 {
-	//get the fan triangles in id and store them in active_pool 
-	//make sure there is no duplication 
+	//get the fan triangles in id and store them in active_pool
+	//make sure there is no duplication
 	int n2 = Vert_org[id].connect[Vert_org[id].connect[0]];
-	
+
 	for (int i = 1; i <= Vert_org[id].connect[0]; i++){
-		
+
 		int n1 = Vert_org[id].connect[i];
-		
-		//id,n1,n2 
-		//check duplication 
+
+		//id,n1,n2
+		//check duplication
 		bool dup = false;
 		for (int j = 0; j < num_active; j++){
 			if (IsDuplicated(n2, n1, id, j)){
@@ -1542,7 +1542,7 @@ void Operator::GetFanTriangles(int id)
 				break;
 			}
 		}
-			
+
 		if (!dup){
 			tri_pool[num_active][0] = id;
 			tri_pool[num_active][1] = n1;
@@ -1554,7 +1554,7 @@ void Operator::GetFanTriangles(int id)
 			num_active++;
 
 			if (num_active + 2 >= MAXPOOL){ return; }
-			
+
 		}
 
 		n2 = n1;
@@ -1581,12 +1581,12 @@ void Operator::RandomPointInTri(double x1, double y1, double z1, double x2, doub
 }
 bool Operator::CheckRefinement(vert*Verts, int*nList, double*tri)
 {
-	
+
 
 	if (!myConstraints.InsideFeasibleRegion_Triangle(tri)){ return false; }
 
-	/*if (constraints.isMinAngle || constraints.isMaxAngle){ //this is wrong 
-		//TODO include the attractor here 
+	/*if (constraints.isMinAngle || constraints.isMaxAngle){ //this is wrong
+		//TODO include the attractor here
 		int n2 = nList[nList[0]];
 		for (int i = 1; i <= nList[0]; i++){
 			int n1 = nList[i];
@@ -1599,7 +1599,7 @@ bool Operator::CheckRefinement(vert*Verts, int*nList, double*tri)
 			double angle3 = (AngleVectVect(Verts[n1].x[0] - tri[6], Verts[n1].x[1] - tri[7], Verts[n1].x[2] - tri[8],
 				                           Verts[n2].x[0] - tri[6], Verts[n2].x[1] - tri[7], Verts[n2].x[2] - tri[8]))*RadToDeg;
 			if ((angle1 < constraints.MinAngle + _tol &&
-				 angle2 < constraints.MinAngle + _tol && 
+				 angle2 < constraints.MinAngle + _tol &&
 				 angle3 < constraints.MinAngle + _tol)||
 				(angle1 > constraints.MaxAngle + _tol &&
 				 angle2 > constraints.MaxAngle + _tol &&
@@ -1625,14 +1625,14 @@ bool Operator::CheckNewVertex(vert*Verts, int*nList, double x_new, double  y_new
 			double accum = 0;
 			for (int i = 1; i < nList[0]; i++){
 				int n2 = nList[i];
-				int n1 = nList[i + 1]; 
+				int n1 = nList[i + 1];
 				double myAngle = AngleVectVect(Verts[n1].x[0] - x_new, Verts[n1].x[1] - y_new, Verts[n1].x[2] - z_new,
 					                           Verts[n2].x[0] - x_new, Verts[n2].x[1] - y_new, Verts[n2].x[2] - z_new)*RadToDeg;
 
 				if (myAngle < constraints.MinAngle + _tol){ return false; }
 				if (myAngle + _tol > constraints.MaxAngle){ return false; }
 				accum += myAngle;
-			}			
+			}
 		}
 		else{
 			int n2 = nList[nList[0]];
@@ -1642,16 +1642,16 @@ bool Operator::CheckNewVertex(vert*Verts, int*nList, double x_new, double  y_new
 				double myAngle = AngleVectVect(Verts[n1].x[0] - x_new, Verts[n1].x[1] - y_new, Verts[n1].x[2] - z_new,
 					                            Verts[n2].x[0] - x_new, Verts[n2].x[1] - y_new, Verts[n2].x[2] - z_new)*RadToDeg;
 
-				if (myAngle < constraints.MinAngle + _tol || myAngle + _tol > constraints.MaxAngle){ return false; }				
+				if (myAngle < constraints.MinAngle + _tol || myAngle + _tol > constraints.MaxAngle){ return false; }
 				n2 = n1;
 			}
 		}
 	}
 
 	if (constraints.isSmooth){
-		//TODO add smoothness to attractor 
+		//TODO add smoothness to attractor
 
-		//check smoothnes 
+		//check smoothnes
 		int n2 = nList[nList[0]];
 		for (int i = 1; i <= nList[0]; i++){
 			int n1 = nList[i];
@@ -1659,7 +1659,7 @@ bool Operator::CheckNewVertex(vert*Verts, int*nList, double x_new, double  y_new
 			double angle = TriTriNormalAngle3(x_new, y_new, z_new, Verts[n1].x, Verts[n2].x, Verts[n3].x);
 			//angle = 180 - angle;
 			//if (angle < 180 - constraints.dev){
-			if (angle > constraints.dev){ 
+			if (angle > constraints.dev){
 				return false;
 			}
 			n2 = n1;
@@ -1687,7 +1687,7 @@ void Operator::RetrieveCoordinates(int lf, int* cell, double&x0, double&y0, doub
 	//binary is the avariable holding the value of the cell[1 or 2] which will be "bit" masked to get the refined ID
 	int shift = 0;
 	double a0, b0, c0, a1, b1, c1, a2, b2, c2;
-	for (int i = 0; i < lf; i++){ 
+	for (int i = 0; i < lf; i++){
 		//get refined tri ID
 		c_num = binary& ((int(pow(2.0, (shift + 1.0))) + 1) | (int(pow(2.0, shift)) + 1));
 		c_num = c_num >> shift;
@@ -1741,12 +1741,12 @@ void Operator::RetrieveCoordinates(int lf, int* cell, double&x0, double&y0, doub
 }
 
 
-///************** Optimizer Functions (for sampling) 
+///************** Optimizer Functions (for sampling)
 double OpimizerFunc_CenterAngle(vert*Verts, int*nList, double*void_verx, double xx, double yy, double zz)
 {
-	//return the different between myAngle and perfect_angle 
+	//return the different between myAngle and perfect_angle
 	//perfect_angle = 360.0 / nList[0];
-	//myAngle is the min apex angle 
+	//myAngle is the min apex angle
 
 	double perfect_angle = 360.0 / nList[0];
 
@@ -1765,7 +1765,7 @@ double OpimizerFunc_SideAngle(vert*Verts, int*nList, double minAngle, double max
 {
 	//get the angle between (xx,yy,zz), nList[1] and nList[nList[0]]
 	//if it supposed to be less than 180.0
-	//otherwise this method might returen wrong angle 
+	//otherwise this method might returen wrong angle
 
 	//return the difference between (2minAngle - ang) + (ang - 2maxAngle)
 	//we take the difference this way because we try to minimize the returned value from this function
@@ -1774,35 +1774,35 @@ double OpimizerFunc_SideAngle(vert*Verts, int*nList, double minAngle, double max
 	int n2 = nList[nList[0]];
 	double ang = AngleVectVect(Verts[n1].x[0] - xx, Verts[n1].x[1] - yy, Verts[n1].x[2] - zz,
                    		       Verts[n2].x[0] - xx, Verts[n2].x[1] - yy, Verts[n2].x[2] - zz)*RadToDeg;
-	
-	
+
+
 	double diff1 = 2.0*minAngle - ang;
 	double diff2 = ang - 2.0*maxAngle;
 
-	
-	return diff2 + diff2; 
+
+	return diff2 + diff2;
 }
 double OpimizerFunc_SideAngleHybird(vert*Verts, int*nList, double minAngle, double maxAngle, double xx, double yy, double zz)
 {
 	//TODO (smarter way for optimizing side angles)
-	//use this for hybird attractor/repeller 
+	//use this for hybird attractor/repeller
 
 	//nList is discounted list of neighbours around (xx,yy,zz)
 	//get sum of all apex angle at (xx,yy,zz)
-	//subtract this from 360 --> sum_angle 
+	//subtract this from 360 --> sum_angle
 	//depending min(diff_min, diff_max)
 	//where diff_min = sum_angle - 2.0*minAngle
-	//diff_max = 2.0*maxAngle - sum_angle 
+	//diff_max = 2.0*maxAngle - sum_angle
 	double sum_angle = 0;
 	for (int i = 1; i < nList[0]; i++){
 		int n1 = nList[i];
-		int n2 = nList[i + 1]; 
+		int n2 = nList[i + 1];
 		sum_angle += AngleVectVect(Verts[n1].x[0] - xx, Verts[n1].x[1] - yy, Verts[n1].x[2] - zz,
 			                       Verts[n2].x[0] - xx, Verts[n2].x[1] - yy, Verts[n2].x[2] - zz)*RadToDeg;
 	}
 	sum_angle = 360.0 - sum_angle;
 
-	double diff_min = -(sum_angle - 2.0*minAngle); 
+	double diff_min = -(sum_angle - 2.0*minAngle);
 	double diff_max = -(2.0*maxAngle - sum_angle);
 
 	return std::min(diff_min, diff_max);
@@ -1810,24 +1810,24 @@ double OpimizerFunc_SideAngleHybird(vert*Verts, int*nList, double minAngle, doub
 }
 double OpimizerFunc_Closer(vert*Verts, int*nList, double*void_verx, double xx, double yy, double zz)
 {
-	//return the distance to void_vertex 
-	//since we optimizer minimize the distance, we return it as it is 
+	//return the distance to void_vertex
+	//since we optimizer minimize the distance, we return it as it is
 
 	double dist = Dist(void_verx[0], void_verx[1], void_verx[2], xx, yy, zz);
 	return dist;
 }
 double OpimizerFunc_Further(vert*Verts, int*nList, double*void_verx, double xx, double yy, double zz)
 {
-	//return the distance to void_vertex 
-	//since we optimizer minimize the distance, we return negative the distance 
+	//return the distance to void_vertex
+	//since we optimizer minimize the distance, we return negative the distance
 
 	double dist = Dist(void_verx[0], void_verx[1], void_verx[2], xx, yy, zz);
-	return -dist; 
+	return -dist;
 }
 
 
 
-///************** Update Mesh 
+///************** Update Mesh
 void Operator::Mover(int ip, vert*Verts)
 {
 	//move ip to newVertex (do any other neccessary toplogical changes)
@@ -1841,7 +1841,7 @@ void Operator::EdgeCollapse(int ip_low, int ip_high, int&numVert, vert*Verts)
 	//remove ip_high and then move ip_low (the order of the operation is i m p o r t a nt)
 	if (ip_low > ip_high){ std::swap(ip_high, ip_low); }
 
-	//1) remove ip_high 
+	//1) remove ip_high
 	RemoveVertex(ip_high, numVert, Verts);
 
 	//2) move ip_low
@@ -1861,7 +1861,7 @@ void Operator::EdgeCollapse(int ip_low, int ip_high, int&numVert, vert*Verts)
 
 	//appropriately, add ip_low to the connectivity list of vertices on mynList
 	int prv = mynList[mynList[0]];//prv
-	for (int i = 1; i <= mynList[0]; i++){ 
+	for (int i = 1; i <= mynList[0]; i++){
 		int nxt = (i == mynList[0]) ? mynList[1] : mynList[i + 1]; //next
 		AddEntrySortedList(ip_low, Verts[mynList[i]].connect, prv, nxt);
 		prv = mynList[i];
@@ -1873,7 +1873,7 @@ void Operator::FaceCollapse(int ip_low, int ip_mid, int ip_high, int&numVert, ve
 {
 	//collapse the triangle ip_low-ip_mid-ip_high
 	//remove ip_high and then remove ip_mid and then move ip_low (the order of the operation is i m p o r t a nt)
-	
+
 	int my_ip_high, my_ip_mid, my_ip_low;
 	my_ip_high = std::max(ip_low, ip_mid);
 	my_ip_high = std::max(my_ip_high, ip_high);
@@ -1915,7 +1915,7 @@ void Operator::FaceCollapse(int ip_low, int ip_mid, int ip_high, int&numVert, ve
 }
 void Operator::RemoveVertex(int ip, int&numVert, vert*Verts)
 {
-	//remove ip from mesh data strcuture 
+	//remove ip from mesh data strcuture
 
 	//1) remove ip from any connectivity list of other vertices
 	for (int i = 1; i <= Verts[ip].connect[0]; i++){
@@ -1954,17 +1954,17 @@ void Operator::RemoveVertex(int ip, int&numVert, vert*Verts)
 		mynList[id] = ip;
 	}
 
-	
+
 }
 void Operator::Inserter(int&numVert, vert*Verts)
 {
 	//break edges in EdgeToBreak,
 	//insert a newVertex into the data structure and connect it to mynList,
-	//update mynList too, 
-	
+	//update mynList too,
+
 	for (int i = 1; i <= EdgeToBreak[0]; i++){
-		int ip = EdgeToBreak[i * 2 - 1]; 
-		int iq = EdgeToBreak[i * 2]; 
+		int ip = EdgeToBreak[i * 2 - 1];
+		int iq = EdgeToBreak[i * 2];
 		RemoveNodeFromList(Verts[iq].connect, ip);
 		RemoveNodeFromList(Verts[ip].connect, iq);
 	}
@@ -1972,7 +1972,7 @@ void Operator::Inserter(int&numVert, vert*Verts)
 	Verts[numVert].x[0] = newVertex[0];
 	Verts[numVert].x[1] = newVertex[1];
 	Verts[numVert].x[2] = newVertex[2];
-		
+
 	for (int i = 0; i <= mynList[0]; i++){
 		Verts[numVert].connect[i] = mynList[i];
 	}
@@ -1985,13 +1985,13 @@ void Operator::Inserter(int&numVert, vert*Verts)
 		AddEntrySortedList(numVert, Verts[mynList[i]].connect, prv, nxt);
 		prv = mynList[i];
 	}
-		
+
 	numVert++;
 
 }
 
 
-///************** Debug 
+///************** Debug
 void Operator::ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id)
 {
 	//mess_id =0 for error (exit)
@@ -2015,8 +2015,8 @@ void Operator::DrawActivePool(int lf)
 	std::fstream file(fname.str().c_str(), std::ios::out);
 	double x1, y1, z1, x2, y2, z2, x3, y3, z3;
 
-	
-	for (int V = 0; V<num_active; V++){		
+
+	for (int V = 0; V<num_active; V++){
 		RetrieveCoordinates(lf, active_pool[V], x1, y1, z1, x2, y2, z2, x3, y3, z3);
 		file << "v " << x1 << " " << y1 << " " << z1 << std::endl;
 		file << "v " << x2 << " " << y2 << " " << z2 << std::endl;
@@ -2031,5 +2031,5 @@ void Operator::DrawnList(vert*Verts)
 	for (int i = 1; i <= mynList[0]; i++){
 		//DrawOneSphere(mynList[i], Verts[mynList[i]].x[0], Verts[mynList[i]].x[1], Verts[mynList[i]].x[2], 0.001, 3);
 	}
-	
+
 }

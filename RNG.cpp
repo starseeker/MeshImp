@@ -25,6 +25,7 @@
 
 #include "RNG.h"
 #include <assert.h>
+#include <cstddef>
 
 RndNum::RndNum()
 {

@@ -25,13 +25,13 @@
 
 
 #include "Constraints.h"
-#include "../util/ThreeDRotation.h"
-#include "../util/Common.h"
+#include "ThreeDRotation.h"
 
 #include <stdlib.h>
 #include <algorithm>
+#include <cfloat>
 
-//#include "DrawSpheresDebug.h"//for debugging  
+//#include "DrawSpheresDebug.h"//for debugging
 
 extern bool isObtuse;
 extern bool isAcute;
@@ -39,20 +39,20 @@ extern bool isAcute;
 Constraints::Constraints()
 {
 	numPlane = numExSphere = numInSphere = 0;
-	numExSphere_size = numInSphere_size = numPlane_size = 999; 
+	numExSphere_size = numInSphere_size = numPlane_size = 999;
 	ExSphere = new sphere[1000];
 	InSphere = new sphere[1000];
-	Plane = new plane[1000];	
+	Plane = new plane[1000];
 }
 //TODO add maximality constraints as 3d points (on the original input surface) to be covered by the new vertex
-//TODO add Hausdorff dist constriants 
+//TODO add Hausdorff dist constriants
 
 
 Constraints::~Constraints(){}
 
 void Constraints::ErrWarnMessage(size_t lineNum, std::string message, size_t mess_id)
 {
-	
+
 	//mess_id =0 for error (exit)
 	//otherwise, it is a warning (pause)
 
@@ -103,19 +103,19 @@ void Constraints::SetBoundingBox(vert*Verts, int*nList)
 bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipList, bool isConnected)
 {
 	if (!isConnected){
-		return DelaunayNotConnected(nList, skipList, Verts, loadSkipList);		
+		return DelaunayNotConnected(nList, skipList, Verts, loadSkipList);
 	}
 	//TODO Delaunay_Extend where the list from which we calc ex sphere and in shperes are decoupled
 
-	//nList is the sort list of neighbours around the a void 
-	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of 
+	//nList is the sort list of neighbours around the a void
+	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of
 	//untouched/surounding triangles
 	//2) find the inclusion spheres such that a new vertex should lie within to create delaunay-accurate set
-	//of triangles 
-	//skipList contians current vertices that should be negelected 
+	//of triangles
+	//skipList contians current vertices that should be negelected
 
 	//start by loading skipList to aux_list
-	//for insert, we always wanna consider the vertices in skipList 
+	//for insert, we always wanna consider the vertices in skipList
 	if (loadSkipList){
 		for (int i = 1; i <= skipList[0]; i++){
 			aux_list[i + 3] = skipList[i];
@@ -131,19 +131,19 @@ bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipLis
 		//this is easy because this result into one InSphere (that connect these three vertices)
 		//and three ExSpheres (no looping needed)
 
-		int ap(nList[1]), n1(nList[2]), n2(nList[3]), ap2; 
+		int ap(nList[1]), n1(nList[2]), n2(nList[3]), ap2;
 		InSphere[numInSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
 			                                           Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2],
 			                                           Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2],
 			                                           InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2]);
 		numInSphere++;
-		
+
 		//have to expand skipList
 		skipList[++skipList[0]] = ap;
 		skipList[++skipList[0]] = n1;
 		skipList[++skipList[0]] = n2;
 
-		//first exsphere	
+		//first exsphere
 		ap2 = FindCommonElement_SkipList(Verts[ap].connect, Verts[n2].connect, skipList);
 		ExSphere[numExSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
 			                                           Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2],
@@ -171,16 +171,16 @@ bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipLis
 	}
 
 
-	
+
 
 	int n2 = nList[nList[0]];
 	for (int i = 1; i <= nList[0]; i++){
 		int ap = nList[i];
 		int n1 = (i == nList[0]) ? nList[1] : nList[i + 1];
-		
+
 		int ap2 = FindCommonElement_SkipList(Verts[ap].connect, Verts[n2].connect, skipList);
 		//find the exclusion sphere (circumsphere of triangle n2-ap-ap2)
-		if (ap2 >= 0){ 
+		if (ap2 >= 0){
 			ExSphere[numExSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
 								                           Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2],
 								                           Verts[ap2].x[0], Verts[ap2].x[1], Verts[ap2].x[2],
@@ -199,12 +199,12 @@ bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipLis
 													   InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2]);
 		//this sphere could be too large or already contain other vertices
 		//thus adding it in the containts set is useless
-		if (InSphere[numInSphere].x[3] > 2){ 
-			//because the domain is scaled inside the unit box 
+		if (InSphere[numInSphere].x[3] > 2){
+			//because the domain is scaled inside the unit box
 			n2 = ap;
-			continue; 
+			continue;
 		}
-		
+
 		aux_list[1] = ap;
 		aux_list[2] = n1;
 		aux_list[3] = n2;
@@ -213,9 +213,9 @@ bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipLis
 			!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[ap].connect, aux_list, Verts) ||
 			!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n1].connect, aux_list, Verts) ||
 			!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n2].connect, aux_list, Verts)){
-			//this circumsphere already contains other vertices and so it not a delaunay triangle 
+			//this circumsphere already contains other vertices and so it not a delaunay triangle
 			n2 = ap;
-			
+
 			continue;
 		}
 
@@ -223,22 +223,22 @@ bool Constraints::Delaunay(int*nList, int*skipList, vert*Verts, bool loadSkipLis
 		if (numInSphere == numInSphere_size){ ExpandSpheres(numInSphere_size, numInSphere, InSphere); }
 		n2 = ap;
 	}
-	return true;	
+	return true;
 }
 bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool loadSkipList)
 {
-	
+
 	//nList is the sort list of neighbours around the a void but not a connected chain
 	//i.e., last and first are not connected
 
-	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of 
+	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of
 	//untouched/surounding triangles
 	//2) find the inclusion spheres such that a new vertex should lie within to create delaunay-accurate set
-	//of triangles 
-	//skipList contians current vertices that should be negelected 
+	//of triangles
+	//skipList contians current vertices that should be negelected
 
 	//start by loading skipList to aux_list
-	//for insert, we always wanna consider the vertices in skipList (then set loadSkipList to false)	
+	//for insert, we always wanna consider the vertices in skipList (then set loadSkipList to false)
 	if (loadSkipList){
 		for (int i = 1; i <= skipList[0]; i++){
 			aux_list[i + 3] = skipList[i];
@@ -248,7 +248,7 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 	else{
 		aux_list[0] = 3;
 	}
-	
+
 	if (nList[0] == 3){
 		//this is easy because this result into one InSphere (that connect these three vertices)
 		//and two ExSpheres (no looping needed)
@@ -260,7 +260,7 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 			                                           InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2]);
 		numInSphere++;
 
-		
+
 		//first exsphere
 		ap2 = FindCommonElement_SkipList(Verts[ap].connect, Verts[n1].connect, skipList);
 		ExSphere[numExSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
@@ -275,14 +275,14 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 			                                           Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2],
 			                                           Verts[ap2].x[0], Verts[ap2].x[1], Verts[ap2].x[2],
 			                                           ExSphere[numExSphere].x[0], ExSphere[numExSphere].x[1], ExSphere[numExSphere].x[2]);
-		numExSphere++;		
+		numExSphere++;
 		return true;
 	}
 
 
 
 
-	
+
 	for (int i = 1; i < nList[0]; i++){
 		int ap = nList[i];
 		int n1 = nList[i + 1];
@@ -304,7 +304,7 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 		}
 
 		if (nList[0] - i >=2){
-			int n2 = nList[i + 2];//two hubs away 
+			int n2 = nList[i + 2];//two hubs away
 
 			//find the inclusion sphere (circumsphere of triangle n2-ap-n1)
 			InSphere[numInSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
@@ -314,7 +314,7 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 			//this sphere could be too large or already contain other vertices
 			//thus adding it in the containts set is useless
 			if (InSphere[numInSphere].x[3] > 2){
-				//because the domain is scaled inside the unit box 				
+				//because the domain is scaled inside the unit box
 				continue;
 			}
 
@@ -326,31 +326,31 @@ bool Constraints::DelaunayNotConnected(int*nList, int*skipList, vert*Verts, bool
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[ap].connect, aux_list, Verts) ||
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n1].connect, aux_list, Verts) ||
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n2].connect, aux_list, Verts)){
-				//this circumsphere already contains other vertices and so it not a delaunay triangle 
+				//this circumsphere already contains other vertices and so it not a delaunay triangle
 				continue;
 			}
 			numInSphere++;
 			if (numInSphere == numInSphere_size){ ExpandSpheres(numInSphere_size, numInSphere, InSphere); }
-		}		
+		}
 	}
 	return true;
 }
 bool Constraints::DelaunayForcedNotConnected(int*nList, int removed, int*skipList, vert*Verts)
 {
-	//TODO add finding the circum spheres also (not well defined) 
-	//force nList to be not connected by removing one vertex from it 
+	//TODO add finding the circum spheres also (not well defined)
+	//force nList to be not connected by removing one vertex from it
 	//nList is the sort list of neighbours around the a void
-	
-	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of 
+
+	//1) find the exclusion spheres such that a new vertex should lie outside to maintain delaunayness of
 	//untouched/surounding triangles
-	
+
 
 	//start by loading skipList to aux_list
-	//for insert, we always wanna consider the vertices in skipList 
+	//for insert, we always wanna consider the vertices in skipList
 
 
 	if (nList[0] == 3){
-		return false;		
+		return false;
 		ErrWarnMessage(__LINE__, "Constraints::DelaunayForcedNotConnected:: have not considered this case yet", 0);
 		//this is easy because this result into one InSphere (that connect these three vertices)
 		//and two ExSpheres (no looping needed)
@@ -383,7 +383,7 @@ bool Constraints::DelaunayForcedNotConnected(int*nList, int removed, int*skipLis
 
 
 	int n1 = nList[nList[0]];
-	for (int i = 1; i <= nList[0]; i++){ 
+	for (int i = 1; i <= nList[0]; i++){
 		int ap = nList[i];
 		if (ap != removed && n1 != removed){
 			int ap2 = FindCommonElement_SkipList(Verts[ap].connect, Verts[n1].connect, skipList);
@@ -404,7 +404,7 @@ bool Constraints::DelaunayForcedNotConnected(int*nList, int removed, int*skipLis
 			}
 		}
 		/*if (nList[0] - i > 2){
-			int n2 = nList[i + 2];//two hubs away 
+			int n2 = nList[i + 2];//two hubs away
 
 			//find the inclusion sphere (circumsphere of triangle n2-ap-n1)
 			InSphere[numInSphere].x[3] = TriCircumcenter3d(Verts[ap].x[0], Verts[ap].x[1], Verts[ap].x[2],
@@ -414,7 +414,7 @@ bool Constraints::DelaunayForcedNotConnected(int*nList, int removed, int*skipLis
 			//this sphere could be too large or already contain other vertices
 			//thus adding it in the containts set is useless
 			if (InSphere[numInSphere].x[3] > 2){
-				//because the domain is scaled inside the unit box 				
+				//because the domain is scaled inside the unit box
 				continue;
 			}
 
@@ -426,7 +426,7 @@ bool Constraints::DelaunayForcedNotConnected(int*nList, int removed, int*skipLis
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[ap].connect, aux_list, Verts) ||
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n1].connect, aux_list, Verts) ||
 				!IsEmptySphere(InSphere[numInSphere].x[0], InSphere[numInSphere].x[1], InSphere[numInSphere].x[2], InSphere[numInSphere].x[3], Verts[n2].connect, aux_list, Verts)){
-				//this circumsphere already contains other vertices and so it not a delaunay triangle 
+				//this circumsphere already contains other vertices and so it not a delaunay triangle
 				continue;
 			}
 			numInSphere++;
@@ -443,9 +443,9 @@ bool Constraints::IsEmptySphere(double xc, double yc, double zc, double rc_2,
 {
 	for (int V = 1; V <= list[0]; V++){
 		if (GetIndex(list[V], skip_list) >= 0){
-			continue; 
+			continue;
 		}
-		double dist = Dist(Verts[list[V]].x[0], Verts[list[V]].x[1], Verts[list[V]].x[2], xc, yc, zc); 
+		double dist = Dist(Verts[list[V]].x[0], Verts[list[V]].x[1], Verts[list[V]].x[2], xc, yc, zc);
 		if (dist<rc_2 - _tol*_tol){
 			return false;
 		}
@@ -454,11 +454,11 @@ bool Constraints::IsEmptySphere(double xc, double yc, double zc, double rc_2,
 }
 void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_ang, double*void_vertex, bool nonObtuse, bool isConnected)
 {
-	//Find the inclusion and excluion region for all base angles such that a new vertex placed 
+	//Find the inclusion and excluion region for all base angles such that a new vertex placed
 	//in the void surounded by nList and connected to all vertices in nList will not violate
 	//the max_ang and min_ang constraints (just the base angles)
 	//in case of nonObtuse = true, we additionally add diameter spheres such that apex angle is less than 90.0
-	
+
 	int n2 = nList[nList[0]];
 
 	for (int i = 1; i <= nList[0]; i++){
@@ -469,8 +469,8 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 			continue;
 		}
 		if (min_ang > _tol){
-			//*********** 1) Get min angle planes 
-			//******* a) base angle 
+			//*********** 1) Get min angle planes
+			//******* a) base angle
 			double rot_angle(90.0 - min_ang);
 			double x_n, y_n, z_n;
 
@@ -486,8 +486,8 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 				            Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2], rot_angle, x1, y1, z1);
 			//To be improved/revised
 			//a naive way to check on the rotation direction
-			//by doing it again with negative sign 
-			//and check distanced min_point 
+			//by doing it again with negative sign
+			//and check distanced min_point
 			double x_sub, y_sub, z_sub;
 			rot_angle *= -1.0;
 			PerformRotation(Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2], x_n, y_n, z_n,
@@ -502,7 +502,7 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 			else{
 				rot_angle *= -1.0;
 			}
-			
+
 
 			SinglePlane(x1 - Verts[n1].x[0],
 				        y1 - Verts[n1].x[1],
@@ -517,7 +517,7 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 			double x2, y2, z2;
 			PerformRotation(Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2], x_n, y_n, z_n,
 				            Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2], rot_angle, x2, y2, z2);
-			
+
 
 			SinglePlane(x2 - Verts[n2].x[0],
 				        y2 - Verts[n2].x[1],
@@ -527,9 +527,9 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 
 
 		if (max_ang > _tol){
-			//*********** 2) Get max angle planes 
+			//*********** 2) Get max angle planes
 			if (nonObtuse){
-				//******* a) base angle 
+				//******* a) base angle
 				if (!isObtuse){
 					SinglePlane(Verts[n1].x[0] - Verts[n2].x[0],
 						Verts[n1].x[1] - Verts[n2].x[1],
@@ -543,21 +543,21 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 				}
 
 
-				//******* b) apex angle 
+				//******* b) apex angle
 				ExSphere[numExSphere].x[0] = (Verts[n1].x[0] + Verts[n2].x[0]) / 2.0;
 				ExSphere[numExSphere].x[1] = (Verts[n1].x[1] + Verts[n2].x[1]) / 2.0;
 				ExSphere[numExSphere].x[2] = (Verts[n1].x[2] + Verts[n2].x[2]) / 2.0;
 				ExSphere[numExSphere].x[3] = Dist(ExSphere[numExSphere].x[0], ExSphere[numExSphere].x[1], ExSphere[numExSphere].x[2], Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2]);
-								
+
 				numExSphere++;
 				if (numExSphere == numExSphere_size){ ExpandSpheres(numExSphere_size, numExSphere, ExSphere); }
 			}
 			else {
 				if (true || !isAcute){
-					//******* a) base angle 
+					//******* a) base angle
 					double rot_angle = abs(max_ang - 90.0);
 					double x_n, y_n, z_n;
-					//normal to n1,n2, mid plane	
+					//normal to n1,n2, mid plane
 					Cross(Verts[n2].x[0] - Verts[n1].x[0], Verts[n2].x[1] - Verts[n1].x[1], Verts[n2].x[2] - Verts[n1].x[2],
 						  void_vertex[0] - Verts[n1].x[0], void_vertex[1] - Verts[n1].x[1], void_vertex[2] - Verts[n1].x[2], x_n, y_n, z_n);
 					NormalizeVector(x_n, y_n, z_n);
@@ -569,8 +569,8 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 						            Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2], rot_angle, x1, y1, z1);
 					//To be improved/revised
 					//a naive way to check on the rotation direction
-					//by doing it again with negative sign 
-					//and check distanced min_point 
+					//by doing it again with negative sign
+					//and check distanced min_point
 					double x_sub, y_sub, z_sub;
 					rot_angle *= -1.0;
 					PerformRotation(Verts[n2].x[0], Verts[n2].x[1], Verts[n2].x[2], x_n, y_n, z_n,
@@ -588,7 +588,7 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 					else {
 						rot_angle *= -1.0;
 					}
-					
+
 
 
 					SinglePlane(Verts[n1].x[0] - x1,
@@ -618,9 +618,9 @@ void Constraints::MinMaxAngle(int*nList, vert*Verts, double min_ang, double max_
 }
 void Constraints::MinEdgeLength(int*nList, vert*Verts, double(*sizingfunc)(double xx, double yy, double zz))
 {
-	//min edge lenght constraints (to respect the sizing function) 
-	//it is based on the fact that new vertex in the void will be conntected to all 
-	//vertices in nList 
+	//min edge lenght constraints (to respect the sizing function)
+	//it is based on the fact that new vertex in the void will be conntected to all
+	//vertices in nList
 	//sizingfunc should return the sizing function which is a protecteing sphere (ExSphere)
 	//around each vertex in nList
 	for (int i = 1; i <= nList[0]; i++){
@@ -635,17 +635,17 @@ void Constraints::MinEdgeLength(int*nList, vert*Verts, double(*sizingfunc)(doubl
 }
 void Constraints::MinEdgeLength(int*nList, vert*Verts, double r_min_2)
 {
-	//min edge lenght constraints (to respect the sizing function) 
-	//it is based on the fact that new vertex in the void will be conntected to all 
-	//vertices in nList 
-	//for unifrom sizing function, r_min_2 is square the sizing function 
+	//min edge lenght constraints (to respect the sizing function)
+	//it is based on the fact that new vertex in the void will be conntected to all
+	//vertices in nList
+	//for unifrom sizing function, r_min_2 is square the sizing function
 	for (int i = 1; i <= nList[0]; i++){
 		int n = nList[i];
 		ExSphere[numExSphere].x[0] = Verts[n].x[0];
 		ExSphere[numExSphere].x[1] = Verts[n].x[1];
 		ExSphere[numExSphere].x[2] = Verts[n].x[2];
 		ExSphere[numExSphere].x[3] = r_min_2;
-				
+
 		numExSphere++;
 		if (numExSphere == numExSphere_size){ ExpandSpheres(numExSphere_size, numExSphere, ExSphere); }
 	}
@@ -653,39 +653,39 @@ void Constraints::MinEdgeLength(int*nList, vert*Verts, double r_min_2)
 void Constraints::SinglePlane(double xn, double yn, double zn, double px, double py, double pz)
 {
 	//construct a single plance by specifiying the normal to the plane (xn, yn, zn)
-	// and a point on it 
+	// and a point on it
 	NormalizeVector(xn, yn, zn);
 
 	Plane[numPlane].x[0] = xn;
 	Plane[numPlane].x[1] = yn;
 	Plane[numPlane].x[2] = zn;
-	Plane[numPlane].x[3] = -1.0*(px * Plane[numPlane].x[0] + py * Plane[numPlane].x[1] + pz * Plane[numPlane].x[2]); 
-	
+	Plane[numPlane].x[3] = -1.0*(px * Plane[numPlane].x[0] + py * Plane[numPlane].x[1] + pz * Plane[numPlane].x[2]);
+
 	numPlane++;
 	if (numPlane == numPlane_size){ ExpandPlanes(numPlane_size, numPlane, Plane); }
 
 
 }
 void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_vertex, double dev)
-{	
+{
 	//we are looking for two planes
 	//one of them is define by the mid point between n1-n2
 	//and has a normal of plane containing n1,n2 and ap but tilted an angle=
 	//the other has the same point but the normal tilted with -ve of previous angle
 	if (nList[0] == 3){
-		//expand the skipList to include nList to get the correct apex 
+		//expand the skipList to include nList to get the correct apex
 		skipList[++skipList[0]] = nList[1];
 		skipList[++skipList[0]] = nList[2];
 		skipList[++skipList[0]] = nList[3];
 	}
 	int n2 = nList[nList[0]];
-	for (int i = 1; i <= nList[0]; i++){		
+	for (int i = 1; i <= nList[0]; i++){
 		int n1 = nList[i];
 		int ap = FindCommonElement_SkipList(Verts[n1].connect, Verts[n2].connect, skipList);
 		double tri_tri_angle = TriTriNormalAngle(Verts[n1].x, Verts[n2].x, Verts[ap].x, void_vertex);
 		double rot_ang = dev;
 
-		//the plane normal vector 
+		//the plane normal vector
 		double x_n, y_n, z_n;
 		Cross(Verts[n1].x[0] - Verts[ap].x[0], Verts[n1].x[1] - Verts[ap].x[1], Verts[n1].x[2] - Verts[ap].x[2],
 			  Verts[n2].x[0] - Verts[ap].x[0], Verts[n2].x[1] - Verts[ap].x[1], Verts[n2].x[2] - Verts[ap].x[2],
@@ -697,13 +697,13 @@ void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_ve
 		double y_mid = (Verts[n1].x[1] + Verts[n2].x[1]) / 2.0;
 		double z_mid = (Verts[n1].x[2] + Verts[n2].x[2]) / 2.0;
 
-		//point on the vector 
+		//point on the vector
 		double pv_x = x_n + x_mid;
 		double pv_y = y_n + y_mid;
 		double pv_z = z_n + z_mid;
 		double pv_x_rot, pv_y_rot, pv_z_rot;
 
-		//first plane 
+		//first plane
 		PerformRotation(pv_x, pv_y, pv_z,
 			            Verts[n1].x[0] - Verts[n2].x[0], Verts[n1].x[1] - Verts[n2].x[1], Verts[n1].x[2] - Verts[n2].x[2],
 			            x_mid, y_mid, z_mid,
@@ -714,7 +714,7 @@ void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_ve
 		Plane[numPlane].x[1] = pv_y_rot - y_mid;
 		Plane[numPlane].x[2] = pv_z_rot - z_mid;
 		Plane[numPlane].x[3] = -1.0*(x_mid*Plane[numPlane].x[0] + y_mid*Plane[numPlane].x[1] + z_mid*Plane[numPlane].x[2]);
-		
+
 		if (Plane[numPlane].x[0] * void_vertex[0] + Plane[numPlane].x[1] * void_vertex[1] + Plane[numPlane].x[2] * void_vertex[2] + Plane[numPlane].x[3] > _tol){
 			Plane[numPlane].x[0] *= -1.0;
 			Plane[numPlane].x[1] *= -1.0;
@@ -722,14 +722,14 @@ void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_ve
 			Plane[numPlane].x[3] = -1.0*(x_mid*Plane[numPlane].x[0] + y_mid*Plane[numPlane].x[1] + z_mid*Plane[numPlane].x[2]);
 
 			if (Plane[numPlane].x[0] * void_vertex[0] + Plane[numPlane].x[1] * void_vertex[1] + Plane[numPlane].x[2] * void_vertex[2] + Plane[numPlane].x[3] > _tol){
-				ErrWarnMessage(__LINE__, "Constraints::Smoothness:: error(1)", 1);				
+				ErrWarnMessage(__LINE__, "Constraints::Smoothness:: error(1)", 1);
 			}
 		}
 
 		numPlane++;
 		if (numPlane == numPlane_size){ ExpandPlanes(numPlane_size, numPlane, Plane); }
 
-		//second plane 
+		//second plane
 		double rot_ang2 = -1.0*rot_ang;
 		PerformRotation(pv_x, pv_y, pv_z,
 			            Verts[n1].x[0] - Verts[n2].x[0],Verts[n1].x[1] -Verts[n2].x[1], Verts[n1].x[2] - Verts[n2].x[2],
@@ -742,7 +742,7 @@ void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_ve
 		Plane[numPlane].x[2] = pv_z_rot - z_mid;
 		Plane[numPlane].x[3] = -1.0*(x_mid*Plane[numPlane].x[0] + y_mid*Plane[numPlane].x[1] + z_mid*Plane[numPlane].x[2]);
 
-		
+
 		if (Plane[numPlane].x[0] * void_vertex[0] + Plane[numPlane].x[1] * void_vertex[1] + Plane[numPlane].x[2] * void_vertex[2] + Plane[numPlane].x[3] > _tol){
 			Plane[numPlane].x[0] *= -1.0;
 			Plane[numPlane].x[1] *= -1.0;
@@ -752,7 +752,7 @@ void Constraints::Smoothness(int*nList, int*skipList, vert*Verts, double*void_ve
 			if (Plane[numPlane].x[0] * void_vertex[0] + Plane[numPlane].x[1] * void_vertex[1] + Plane[numPlane].x[2] * void_vertex[2] + Plane[numPlane].x[3] > _tol){
 				ErrWarnMessage(__LINE__, "Constraints::Smoothness:: error(2)", 1);
 			}
-		}		
+		}
 
 		numPlane++;
 		if (numPlane == numPlane_size){ ExpandPlanes(numPlane_size, numPlane, Plane); }
@@ -791,37 +791,37 @@ void Constraints::RepellerExSphere(vert*Verts, int ip, double*void_vertex)
 }
 void Constraints::Direction(int*ip, int*nList, vert*Verts)
 {
-	//this builds a bounding polygon to prevent a newly relocated or created 
+	//this builds a bounding polygon to prevent a newly relocated or created
 	//vertex from being created in a region that might create a tangled mesh
 	//while preserving all other quality matric
 
 	//loop around nList
 	//for each edge in nList starting by n1-n2
 	//find the common vertex of n1 and n2 in ip --> shrd
-	//rotate the line between mid and n1 by 90 in direction closer to shrd 
-	//construct the plane with normal as the rotate line 
-	//and the point mid(n1-n2) as a point in it 
+	//rotate the line between mid and n1 by 90 in direction closer to shrd
+	//construct the plane with normal as the rotate line
+	//and the point mid(n1-n2) as a point in it
 
 	//nList could be connected or not connected (does not make difference)
-	
+
 	int n2 = nList[nList[0]];
 	for (int i = 1; i <= nList[0]; i++){
 		int n1 = nList[i];
 
-		//find the share vertex 
+		//find the share vertex
 		if (FindCommonElements(Verts[n1].connect, Verts[n2].connect, aux_list)){
 			int id = -1;
-			for (int j = 1; j <= aux_list[0]; j++){						
+			for (int j = 1; j <= aux_list[0]; j++){
 				int sh = aux_list[j];
 				id = (ip != NULL) ? GetIndex(aux_list[j], ip) : GetIndex(aux_list[j], nList); //for injection, the shared vertex is in nList
 
-				/*if (j == aux_list[0] && id < 0 && nList[0] == 3 && ip[0] == 1){ 
+				/*if (j == aux_list[0] && id < 0 && nList[0] == 3 && ip[0] == 1){
 					//special case of nList not connected with three vertices only
 					id = 0;
 					sh = ip[1];
 				}*/
 				if (id >= 0){
-					
+
 					double xmid(0.5*(Verts[n1].x[0] + Verts[n2].x[0])),
 						   ymid(0.5*(Verts[n1].x[1] + Verts[n2].x[1])),
 						   zmid(0.5*(Verts[n1].x[2] + Verts[n2].x[2]));
@@ -849,7 +849,7 @@ void Constraints::Direction(int*ip, int*nList, vert*Verts)
 						y1 = y_sub;
 						z1 = z_sub;
 					}
-					
+
 					//normal
 					//double xn(x1 - Verts[n1].x[0]),
 					//	     yn(y1 - Verts[n1].x[1]),
@@ -860,7 +860,7 @@ void Constraints::Direction(int*ip, int*nList, vert*Verts)
 						   zn(z1 - zmid);
 					SinglePlane(xn, yn, zn, xmid, ymid, zmid);
 					//SinglePlane(xn, yn, zn, Verts[n1].x[0], Verts[n1].x[1], Verts[n1].x[2]);
-					break;					
+					break;
 				}
 			}
 			if (id < 0 && nList[0] != 3){
@@ -873,7 +873,7 @@ void Constraints::Direction(int*ip, int*nList, vert*Verts)
 		n2 = n1;
 	}
 }
-//*** Checking 
+//*** Checking
 bool Constraints::OverlappingInSpheres()
 {
 	//find if all InSpheres overlaps
@@ -891,8 +891,8 @@ bool Constraints::OverlappingInSpheres()
 }
 bool Constraints::InsideFeasibleRegion_Vertex(double xx, double yy, double zz)
 {
-	//check if (xx,yy,zz) is insdie all the feasible region 
-	//i.e., inside all inclusion regions and outside all exclusion regions 
+	//check if (xx,yy,zz) is insdie all the feasible region
+	//i.e., inside all inclusion regions and outside all exclusion regions
 	if (!IsInsideBoundingBox(xx, yy, zz)){
 		return false;
 	}
@@ -903,12 +903,12 @@ bool Constraints::InsideFeasibleRegion_Vertex(double xx, double yy, double zz)
 	}
 
 	for (int i = 0; i < numInSphere; i++){
-		double dist = Dist(xx, yy, zz, InSphere[i].x[0], InSphere[i].x[1], InSphere[i].x[2]);	
+		double dist = Dist(xx, yy, zz, InSphere[i].x[0], InSphere[i].x[1], InSphere[i].x[2]);
 		if (dist > InSphere[i].x[3] - _tol_sq){ return false; }
 	}
 
 	for (int i = 0; i < numPlane; i++){
-		if (xx*Plane[i].x[0] + yy*Plane[i].x[1] + zz*Plane[i].x[2] + Plane[i].x[3]>-_tol){			
+		if (xx*Plane[i].x[0] + yy*Plane[i].x[1] + zz*Plane[i].x[2] + Plane[i].x[3]>-_tol){
 			return false;
 		}
 	}
@@ -932,7 +932,7 @@ bool Constraints::InsideFeasibleRegion_Triangle(double*tri)
 			return false;
 		}
 	}
-	
+
 	for (int i = 0; i < numInSphere; i++){
 		double dist1 = Dist(tri[0], tri[1], tri[2], InSphere[i].x[0], InSphere[i].x[1], InSphere[i].x[2]);
 		double dist2 = Dist(tri[3], tri[4], tri[5], InSphere[i].x[0], InSphere[i].x[1], InSphere[i].x[2]);
@@ -944,7 +944,7 @@ bool Constraints::InsideFeasibleRegion_Triangle(double*tri)
 		}
 	}
 
-	
+
 	for (int i = 0; i < numPlane; i++){
 		if (tri[0] * Plane[i].x[0] + tri[1] * Plane[i].x[1] + tri[2] * Plane[i].x[2] + Plane[i].x[3] >-_tol &&
 			tri[3] * Plane[i].x[0] + tri[4] * Plane[i].x[1] + tri[5] * Plane[i].x[2] + Plane[i].x[3] >-_tol &&
@@ -976,7 +976,7 @@ bool Constraints::IsInsideBoundingBox(double xx, double yy, double zz)
 
 void Constraints::ExpandSpheres(int&currentSize,int currentNumSphere, sphere*&mySpheres)
 {
-	currentSize *= 2; 
+	currentSize *= 2;
 	sphere*newSpheres = new sphere[currentSize];
 	for (int i = 0; i < currentNumSphere; i++){
 		for (int j = 0; j < 4; j++){
@@ -985,13 +985,13 @@ void Constraints::ExpandSpheres(int&currentSize,int currentNumSphere, sphere*&my
 	}
 
 	delete[]mySpheres;
-	
+
 	mySpheres = new sphere[currentSize];
 	for (int i = 0; i < currentNumSphere; i++){
 		for (int j = 0; j < 4; j++){
 			newSpheres[i].x[j] = mySpheres[i].x[j];
 		}
-	}	
+	}
 	currentSize--;
 }
 void Constraints::ExpandPlanes(int&currentSize, int currentNumPlane, plane*&myPlanes)
