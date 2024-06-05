@@ -13,10 +13,6 @@ void PerformRotation(double point_x, double point_y, double point_z,//point to r
 	                        double angle,//angle of rotation
 	                        double&rot_point_x, double&rot_point_y, double&rot_point_z);//point after roation
 
-void multiplyMatrix();
-void setUpRotationMatrix(double angle, double u, double v, double w, double a, double b, double c);
-void showPoint();
-
 #endif /*_3DROTATE_*/
 
 

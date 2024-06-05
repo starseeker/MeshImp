@@ -32,6 +32,9 @@
 
 using namespace std;
 
+void multiplyMatrix();
+void setUpRotationMatrix(double angle, double u, double v, double w, double a, double b, double c);
+void showPoint();
 
 double rotationMatrix[4][4];
 double inputMatrix[4][1] = {0.0, 0.0, 0.0, 0.0};
