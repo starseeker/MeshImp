@@ -28,8 +28,8 @@
 #include <stdio.h>
 
 #include "OBJ.h"
-#include "execute.h"
-
+#define CMeshImpl
+#include "CMeshImp.hpp"
 
 struct Switches
 {
@@ -342,7 +342,7 @@ int main(int argc, char**argv)
 	objReader(filename, numVert, Verts, numTri, Tris);
 
 	//3) Call the right application
-	MeshImp myImp(numVert, Verts, numTri, Tris);
+	CMeshImp myImp(numVert, Verts, numTri, Tris);
 
 	if (mySwitches->nonobt){
 

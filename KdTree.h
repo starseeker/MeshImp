@@ -28,7 +28,16 @@
 #define _KDTREE_
 
 #define MAX_DIM 3
-#include "Common.h"
+
+#ifndef HAVE_VERT
+#define HAVE_VERT
+#define MAX_CONNECT 20 // the max valence for a triangle
+struct vert{
+	double x[3];//x,y,z
+	int connect[MAX_CONNECT];
+	double dih_ang;
+};
+#endif
 
 struct kd_node_t{
 	double*x;

@@ -27,7 +27,8 @@
 
 #include <iostream>
 #include <algorithm>
-#include "Common.h"
+
+
 KdTree::KdTree()
 {
 
