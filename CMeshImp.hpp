@@ -1,6 +1,5 @@
 /* Copyright(c) 2017, The Regents of the University of California, Davis.
  *
- *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met :
  *
@@ -54,8 +53,7 @@ struct tri{
     int neighbour[3];
 };
 
-// TODO - replace these
-#include "KdTree.h"
+#include "KdTree.h"  // TODO - try nanoflann.hpp here
 #include "ThreeDRotation.h"
 
 struct BoundBox{
